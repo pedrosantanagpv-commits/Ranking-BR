@@ -1,0 +1,61 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function profile() {
+      return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data;
+    }
+
+    function isActive() {
+      return isSignedIn() && profile().ativo == true;
+    }
+
+    function isDev() {
+      return isActive() && profile().perfil == 'DEV';
+    }
+
+    function isAdminOrDev() {
+      return isActive() && profile().perfil in ['DEV', 'ADMIN'];
+    }
+
+    match /usuarios/{userId} {
+      allow read: if isActive() && (request.auth.uid == userId || isDev());
+      allow create, update, delete: if isDev();
+    }
+
+    match /equipes/{document=**} {
+      allow read: if isActive();
+      allow write: if isAdminOrDev();
+    }
+
+    match /executivos/{document=**} {
+      allow read: if isActive();
+      allow write: if isAdminOrDev();
+    }
+
+    match /imports/{document=**} {
+      allow read, write: if isAdminOrDev();
+    }
+
+    match /rankings/{document=**} {
+      allow read, write: if isAdminOrDev();
+    }
+
+    match /ranking_entries/{document=**} {
+      allow read, write: if isAdminOrDev();
+    }
+
+    match /configuracoes/{document=**} {
+      allow read: if isActive();
+      allow write: if isDev();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

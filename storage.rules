@@ -1,0 +1,44 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function profile() {
+      return firestore.get(/databases/(default)/documents/usuarios/$(request.auth.uid)).data;
+    }
+
+    function isActive() {
+      return isSignedIn() && profile().ativo == true;
+    }
+
+    function canManage() {
+      return isActive() && profile().perfil in ['DEV', 'ADMIN'];
+    }
+
+    match /executivos/{allPaths=**} {
+      allow read: if isActive();
+      allow write: if canManage();
+    }
+
+    match /equipes/{allPaths=**} {
+      allow read: if isActive();
+      allow write: if canManage();
+    }
+
+    match /templates/{allPaths=**} {
+      allow read: if isActive();
+      allow write: if profile().perfil == 'DEV';
+    }
+
+    match /gerados/{allPaths=**} {
+      allow read, write: if canManage();
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

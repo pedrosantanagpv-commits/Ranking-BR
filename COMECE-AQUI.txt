@@ -1,0 +1,24 @@
+RANKING BR — VERSÃO 0.1.0
+
+1. GITHUB
+Envie todo o conteúdo desta pasta para a raiz do repositório.
+O package.json deve ficar na raiz.
+
+2. APPS SCRIPT
+Abra a pasta apps-script e copie o conteúdo de Code.gs para o seu projeto.
+Depois faça uma nova implantação como App da Web.
+
+3. FIREBASE
+Ative Authentication por e-mail/senha, Firestore e Storage.
+Crie Pedro no Authentication com perfil DEV no Firestore.
+Crie Caio Santiago no Authentication com perfil ADMIN no Firestore.
+As instruções completas e os modelos dos documentos estão no README.md.
+
+4. VERCEL
+Importe o repositório e cadastre as variáveis do arquivo .env.example.
+
+5. PRIMEIRO TESTE
+Sem as variáveis do Firebase, o botão "Acessar demonstração" permite conferir
+o design. Com o Firebase configurado, o login real é liberado.
+
+Leia o README.md antes de configurar os usuários e as regras de segurança.
