@@ -1,5 +1,5 @@
 const APP_NAME = 'Ranking BR';
-const APP_VERSION = '0.1.0';
+const APP_VERSION = '0.2.0';
 
 function doGet(e) {
   return jsonResponse({

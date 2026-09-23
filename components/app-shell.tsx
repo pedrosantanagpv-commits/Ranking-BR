@@ -110,7 +110,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <span>Firebase Authentication</span>
             </div>
           </div>
-          <span className="version">Ranking BR • v0.1.0</span>
+          <span className="version">Ranking BR • v0.2.0</span>
         </div>
       </aside>
 

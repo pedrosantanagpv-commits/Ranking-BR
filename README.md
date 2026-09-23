@@ -1,151 +1,109 @@
-# Ranking BR — v0.1.0
+# Ranking BR — v0.2.0
 
-Primeira versão da plataforma de rankings das cooperativas BR. O projeto foi preparado para rodar com **Next.js + Vercel + Firebase** e utilizar o Google Apps Script como integração auxiliar.
+Versão funcional da plataforma de ranking das cooperativas BR, construída com Next.js, Vercel e Firebase.
 
-## O que já funciona
+## O que funciona nesta versão
 
-- tela de login;
-- autenticação por e-mail e senha com Firebase;
-- validação do perfil salvo no Firestore;
+- login real com Firebase Authentication;
 - perfis `DEV` e `ADMIN`;
-- rotas internas protegidas;
-- dashboard responsivo;
-- navegação completa da aplicação;
-- seleção de relatório `.xls` ou `.xlsx`;
-- modo demonstração quando o Firebase ainda não está configurado;
-- endpoint de teste no Apps Script.
+- leitura do relatório **Gestão Adesão** no formato `.xls` exportado pelo sistema;
+- reconhecimento automático de executivos pelo campo `Voluntário`;
+- contagem apenas de veículos com situação `ATIVO`;
+- 1 ponto por veículo e desempate pela maior previsão financeira;
+- identificação de duplicidades pelo chassi;
+- prévia antes de gravar qualquer dado;
+- cadastro e composição de equipes;
+- cadastro de executivos, equipe e foto;
+- histórico de fechamentos com a equipe preservada no momento da confirmação;
+- ranking de executivos e de equipes;
+- comparação de posição com o fechamento anterior;
+- dashboard com dados reais;
+- geração da arte Top 3 em Feed 4:5 ou Story 9:16;
+- download da arte em PNG.
 
-Os números exibidos no dashboard são demonstrativos nesta versão.
+## Privacidade e armazenamento
 
-## 1. Colocar no GitHub
+O relatório é processado localmente no navegador. Nomes de associados, placas e chassis não são enviados ao Firebase. O banco recebe somente dados consolidados do fechamento, como executivo, equipe, quantidade e previsão.
 
-Envie **todo o conteúdo desta pasta** para a raiz do seu repositório. O arquivo `package.json` precisa ficar na raiz.
+O Firebase Storage não precisa ser ativado. As fotos dos executivos são reduzidas para 420 × 420 pixels e guardadas no próprio cadastro do Firestore. Isso mantém o projeto compatível com o plano Spark sem faturamento.
 
-Estrutura principal:
+## Atualizar o GitHub
 
-```text
-ranking-br/
-├── app/
-├── components/
-├── lib/
-├── public/
-├── apps-script/
-├── firestore.rules
-├── storage.rules
-├── package.json
-└── README.md
-```
+Envie todo o conteúdo desta pasta para a raiz do mesmo repositório usado pela Vercel. O `package.json` precisa permanecer na raiz.
 
-## 2. Preparar o Firebase
+Depois do envio, a Vercel iniciará um novo deploy automaticamente. As variáveis de ambiente já cadastradas continuam salvas e não precisam ser digitadas novamente.
 
-No console do Firebase:
+## Publicar as regras do Firestore
 
-1. crie ou abra o projeto do Ranking BR;
-2. em **Authentication → Sign-in method**, ative **E-mail/senha**;
-3. crie o **Firestore Database**;
-4. ative o **Storage**;
-5. em **Configurações do projeto → Seus apps**, registre um aplicativo Web;
-6. copie as informações do objeto `firebaseConfig`.
+No Firebase Console:
 
-### Variáveis do Firebase
+1. abra **Firestore Database**;
+2. entre na aba **Regras**;
+3. substitua o conteúdo pelo arquivo `firestore.rules` desta versão;
+4. clique em **Publicar**.
 
-Duplique `.env.example` com o nome `.env.local` e preencha:
+As coleções utilizadas são:
+
+- `usuarios`;
+- `equipes`;
+- `executivos`;
+- `imports`;
+- `rankings`;
+- `configuracoes`.
+
+## Atualizar o Apps Script mantendo a mesma URL
+
+1. substitua o conteúdo atual pelo arquivo `apps-script/Code.gs`;
+2. clique em **Implantar → Gerenciar implantações**;
+3. abra a implantação atual pelo ícone de lápis;
+4. em **Versão**, escolha **Nova versão**;
+5. clique em **Implantar**.
+
+A URL terminada em `/exec` permanece a mesma.
+
+## Variáveis da Vercel
+
+Esta versão utiliza as mesmas variáveis já cadastradas:
 
 ```env
-NEXT_PUBLIC_FIREBASE_API_KEY=sua_chave
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=seu-projeto.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=seu-projeto
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=seu-projeto.firebasestorage.app
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=seu_id
-NEXT_PUBLIC_FIREBASE_APP_ID=seu_app_id
+NEXT_PUBLIC_FIREBASE_API_KEY=
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+NEXT_PUBLIC_FIREBASE_APP_ID=
+NEXT_PUBLIC_APPS_SCRIPT_URL=
 ```
 
-Nunca envie o `.env.local` para o GitHub. Ele já está bloqueado no `.gitignore`.
+As variáveis `NEXT_PUBLIC_` da configuração Web do Firebase podem permanecer como **Config** na Vercel.
 
-## 3. Criar Pedro e Caio
+## Primeiro uso recomendado
 
-Em **Firebase Authentication → Users**, crie os dois usuários usando os e-mails e senhas que vocês escolherem.
+1. abra **Equipes** e crie os nomes das equipes que já conhece;
+2. abra **Importar relatório** e selecione o Gestão Adesão `.xls`;
+3. confira os  participantes identificados;
+4. escolha a equipe de cada pessoa na própria prévia;
+5. confirme o fechamento;
+6. abra **Executivos** para ajustar nomes e cadastrar as fotos;
+7. consulte **Rankings**;
+8. abra **Gerar arte** e baixe o Top 3.
 
-Depois copie o `UID` de cada usuário e crie manualmente no Firestore:
+Os participantes ainda não cadastrados são criados automaticamente na confirmação. Nos próximos relatórios, o sistema os reconhecerá pelo nome normalizado, ignorando diferenças de letras maiúsculas e acentos.
 
-### Documento `usuarios/{UID_DO_PEDRO}`
-
-```json
-{
-  "nome": "Pedro",
-  "email": "email_do_pedro",
-  "perfil": "DEV",
-  "ativo": true
-}
-```
-
-### Documento `usuarios/{UID_DO_CAIO}`
-
-```json
-{
-  "nome": "Caio Santiago",
-  "email": "email_do_caio",
-  "perfil": "ADMIN",
-  "ativo": true
-}
-```
-
-Use o `UID` do Authentication como **ID do documento**, exatamente igual. A coleção deve se chamar `usuarios`, toda em minúsculas.
-
-## 4. Publicar as regras
-
-Abra as abas de regras do Firestore e do Storage e cole o conteúdo destes arquivos:
-
-- `firestore.rules`
-- `storage.rules`
-
-Depois clique em **Publicar**.
-
-As regras permitem que o ADMIN opere rankings, equipes, executivos e arquivos. Somente o DEV pode gerenciar usuários e configurações técnicas.
-
-## 5. Testar no computador
-
-Com Node.js instalado:
+## Teste local
 
 ```bash
 npm install
 npm run dev
 ```
 
-Acesse `http://localhost:3000`.
+Depois acesse `http://localhost:3000`.
 
-Se o Firebase ainda não estiver configurado, use o botão **Acessar demonstração**. Esse modo existe apenas para visualizar e testar a interface.
+## Regras fixadas para a v0.2.0
 
-## 6. Importar na Vercel
-
-1. abra a Vercel;
-2. clique em **Add New → Project**;
-3. importe o repositório do GitHub;
-4. mantenha o framework detectado como **Next.js**;
-5. em **Environment Variables**, cadastre as seis variáveis `NEXT_PUBLIC_FIREBASE_...` do `.env.example`;
-6. clique em **Deploy**.
-
-Depois disso, cada atualização enviada ao GitHub pode gerar um novo deploy automaticamente.
-
-## 7. Configurar o Apps Script
-
-No seu projeto do Google Apps Script:
-
-1. substitua o conteúdo do `Code.gs` pelo arquivo `apps-script/Code.gs` deste pacote;
-2. clique em **Implantar → Nova implantação**;
-3. selecione **App da Web**;
-4. execute como você;
-5. permita acesso para qualquer pessoa que possua o link;
-6. copie a URL terminada em `/exec`.
-
-Ao abrir essa URL, você deve receber um JSON com `"status":"online"`.
-
-Se quiser já guardar a URL no projeto, adicione na Vercel:
-
-```env
-NEXT_PUBLIC_APPS_SCRIPT_URL=https://script.google.com/macros/s/SEU_ID/exec
-```
-
-## Observação importante
-
-A v0.1.0 entrega a estrutura visual e técnica. A leitura real do relatório, o cálculo do ranking e o histórico entram na v0.2.0. O botão **Processar relatório** fica desativado até um arquivo ser selecionado, mas ainda não envia nem grava dados nesta versão.
+- entram no ranking somente linhas com situação `ATIVO`;
+- nova adesão, produção e troca de titularidade contam quando o veículo estiver ativo;
+- cada chassi único vale 1 ponto;
+- o primeiro desempate é a maior soma da previsão financeira;
+- a equipe fica registrada como estava na data do fechamento;
+- o mesmo arquivo não pode ser confirmado duas vezes.
