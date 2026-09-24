@@ -7,6 +7,7 @@ import { listExecutives, listTeams, saveExecutive } from "@/lib/firestore-servic
 import { getInitials } from "@/lib/format";
 import { compressProfileImage } from "@/lib/image-utils";
 import { normalizeText } from "@/lib/report-parser";
+import { mergeDefaultTeams } from "@/lib/team-mapping";
 import type { Executive, Team } from "@/lib/types";
 
 const emptyExecutive: Omit<Executive, "id"> = { nome: "", nomeRelatorio: "", nomeNormalizado: "", equipeId: null, fotoDataUrl: "", ativo: true };
@@ -26,7 +27,7 @@ export function ExecutivesManager() {
     try {
       const [executiveItems, teamItems] = await Promise.all([listExecutives(), listTeams()]);
       setExecutives(executiveItems);
-      setTeams(teamItems.filter((team) => team.ativo));
+      setTeams(mergeDefaultTeams(teamItems).filter((team) => team.ativo));
     } catch (caught) { setError(caught instanceof Error ? caught.message : "Não foi possível carregar os executivos."); }
     finally { setLoading(false); }
   }
@@ -69,7 +70,7 @@ export function ExecutivesManager() {
 
   return <div className="manager-page">
     <section className="manager-heading">
-      <div><span className="section-kicker">Participantes</span><h2>Executivos do ranking</h2><p>O nome do relatório faz o vínculo automático. A foto será usada na arte do Top 3.</p></div>
+      <div><span className="section-kicker">Participantes</span><h2>Executivos do ranking</h2><p>O nome identifica o executivo, e a cooperativa define automaticamente sua equipe. A foto será usada na arte do Top 3.</p></div>
       <button className="button button--primary" onClick={() => openForm()}><Plus size={18} /> Novo executivo</button>
     </section>
 
@@ -83,7 +84,7 @@ export function ExecutivesManager() {
     {editing && <div className="modal-backdrop"><form className="modal-card modal-card--large" onSubmit={submit}>
       <div className="modal-card__header"><div><span className="section-kicker">Cadastro</span><h3>{editing.id ? "Editar executivo" : "Novo executivo"}</h3></div><button type="button" className="icon-button" onClick={() => setEditing(null)}><X size={18} /></button></div>
       <div className="profile-editor"><div className="profile-preview">{editing.fotoDataUrl ? <img src={editing.fotoDataUrl} alt="Prévia" /> : <span>{getInitials(editing.nome || "Novo")}</span>}</div><label className="button button--subtle file-button"><Camera size={17} /> {photoLoading ? "Processando..." : "Escolher foto"}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={handlePhoto} disabled={photoLoading} /></label><small>A foto será comprimida e salva no Firestore, sem ativar o Storage.</small></div>
-      <div className="form-grid"><label className="form-label"><span>Nome de exibição</span><input className="text-input" value={editing.nome} onChange={(event) => setEditing({ ...editing, nome: event.target.value })} required /></label><label className="form-label"><span>Nome exatamente como aparece no relatório</span><input className="text-input" value={editing.nomeRelatorio} onChange={(event) => setEditing({ ...editing, nomeRelatorio: event.target.value })} placeholder="Se vazio, usaremos o nome de exibição" /></label><label className="form-label"><span>Equipe atual</span><select className="text-input" value={editing.equipeId ?? ""} onChange={(event) => setEditing({ ...editing, equipeId: event.target.value || null })}><option value="">Sem equipe</option>{teams.map((team) => <option key={team.id} value={team.id}>{team.nome}</option>)}</select></label><label className="toggle-label"><input type="checkbox" checked={editing.ativo} onChange={(event) => setEditing({ ...editing, ativo: event.target.checked })} /><span>Participante ativo</span></label></div>
+      <div className="form-grid"><label className="form-label"><span>Nome de exibição</span><input className="text-input" value={editing.nome} onChange={(event) => setEditing({ ...editing, nome: event.target.value })} required /></label><label className="form-label"><span>Nome exatamente como aparece no relatório</span><input className="text-input" value={editing.nomeRelatorio} onChange={(event) => setEditing({ ...editing, nomeRelatorio: event.target.value })} placeholder="Se vazio, usaremos o nome de exibição" /></label><label className="form-label"><span>Equipe atual</span><input className="text-input" value={teamById.get(editing.equipeId ?? "") ?? "Definida pela cooperativa no relatório"} readOnly /></label><label className="toggle-label"><input type="checkbox" checked={editing.ativo} onChange={(event) => setEditing({ ...editing, ativo: event.target.checked })} /><span>Participante ativo</span></label></div>
       <div className="modal-actions"><button className="button button--subtle" type="button" onClick={() => setEditing(null)}>Cancelar</button><button className="button button--primary" disabled={saving || photoLoading}>{saving ? "Salvando..." : "Salvar executivo"}</button></div>
     </form></div>}
   </div>;

@@ -13,6 +13,7 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { buildTeamRanking } from "./ranking";
+import { teamDocumentId } from "./team-mapping";
 import type { AppUser, Executive, ParsedReport, Ranking, RankingEntry, Team } from "./types";
 
 function requireDb() {
@@ -26,11 +27,18 @@ export async function listTeams() {
   return snapshot.docs.map((item) => ({ id: item.id, ...item.data() } as Team));
 }
 
-export async function saveTeam(team: Pick<Team, "nome" | "ativo"> & { id?: string }) {
+export async function saveTeam(team: Pick<Team, "nome" | "ativo"> & { id?: string; codigoCooperativa?: string; nomeRelatorio?: string; configurada?: boolean }) {
   const database = requireDb();
-  const reference = team.id ? doc(database, "equipes", team.id) : doc(collection(database, "equipes"));
+  const reference = team.id
+    ? doc(database, "equipes", team.id)
+    : team.codigoCooperativa
+      ? doc(database, "equipes", teamDocumentId(team.codigoCooperativa))
+      : doc(collection(database, "equipes"));
   await setDoc(reference, {
     nome: team.nome.trim(),
+    codigoCooperativa: team.codigoCooperativa ?? "",
+    nomeRelatorio: team.nomeRelatorio ?? "",
+    configurada: team.configurada ?? true,
     ativo: team.ativo,
     updatedAt: serverTimestamp(),
     ...(team.id ? {} : { createdAt: serverTimestamp() }),
@@ -108,7 +116,7 @@ export async function saveClosing({
   const database = requireDb();
   const importReference = doc(database, "imports", report.fileHash);
   if ((await getDoc(importReference)).exists()) {
-    throw new Error("Este mesmo arquivo já foi confirmado anteriormente.");
+    throw new Error("Este mesmo par de relatórios já foi confirmado anteriormente.");
   }
 
   const existingExecutives = await listExecutives();
@@ -117,6 +125,17 @@ export async function saveClosing({
   const selectedTeamByName = new Map(entries.map((entry) => [entry.normalizedName, entry.teamId]));
   const reportNames = new Map(report.rows.map((row) => [row.executivoNormalizado, row.executivo]));
   const executiveReferenceByName = new Map(existingExecutives.map((item) => [item.nomeNormalizado, doc(database, "executivos", item.id)]));
+
+  teams.filter((team) => team.codigoCooperativa).forEach((team) => {
+    batch.set(doc(database, "equipes", team.id), {
+      nome: team.nome,
+      codigoCooperativa: team.codigoCooperativa,
+      nomeRelatorio: team.nomeRelatorio ?? "",
+      configurada: team.configurada ?? true,
+      ativo: team.ativo,
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+  });
 
   reportNames.forEach((reportName, normalizedName) => {
     if (!executiveReferenceByName.has(normalizedName)) {
@@ -148,9 +167,10 @@ export async function saveClosing({
   const teamById = new Map(teams.map((team) => [team.id, team]));
   const snappedEntries = finalEntries.map((entry) => ({
     ...entry,
-    team: entry.teamId ? teamById.get(entry.teamId)?.nome ?? entry.team : "Sem equipe",
+    team: entry.teamId ? teamById.get(entry.teamId)?.nome ?? entry.team : entry.team,
   }));
-  const teamEntries = buildTeamRanking(snappedEntries);
+  const previousRanking = await getLatestRanking();
+  const teamEntries = buildTeamRanking(report, teams, previousRanking?.teamEntries ?? []);
   const totalRevenue = Number(snappedEntries.reduce((sum, entry) => sum + entry.revenue, 0).toFixed(2));
   const totalVehicles = snappedEntries.reduce((sum, entry) => sum + entry.plates, 0);
   const rankingReference = doc(collection(database, "rankings"));
@@ -170,8 +190,10 @@ export async function saveClosing({
     statusCounts: report.statusCounts,
     adhesionCounts: report.adhesionCounts,
     vehicleTypeCounts: report.vehicleTypeCounts,
+    sourceReports: report.sourceReports ?? [],
+    crossSourceDuplicates: report.crossSourceDuplicates ?? 0,
     rankingId: rankingReference.id,
-    rulesVersion: "ativos-1-desempate-previsao-v1",
+    rulesVersion: "ativos-1-cooperativa-equipe-duplo-sga-v3",
     createdBy: user.uid,
     createdByName: user.nome,
     createdAt: serverTimestamp(),

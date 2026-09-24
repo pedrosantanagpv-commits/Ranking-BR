@@ -12,6 +12,9 @@ export type AppUser = {
 export type Team = {
   id: string;
   nome: string;
+  codigoCooperativa?: string;
+  nomeRelatorio?: string;
+  configurada?: boolean;
   ativo: boolean;
 };
 
@@ -30,6 +33,7 @@ export type ReportRow = {
   placa: string;
   tipoVeiculo: string;
   cooperativa: string;
+  cooperativaCodigo: string;
   executivo: string;
   executivoNormalizado: string;
   situacao: string;
@@ -55,6 +59,22 @@ export type ParsedReport = {
   statusCounts: Record<string, number>;
   adhesionCounts: Record<string, number>;
   vehicleTypeCounts: Record<string, number>;
+  sourceReports?: SourceReportSummary[];
+  crossSourceDuplicates?: number;
+};
+
+export type ReportSystem = "LEVES" | "TRUCK";
+
+export type SourceReportSummary = {
+  system: ReportSystem;
+  fileName: string;
+  fileHash: string;
+  totalRows: number;
+  duplicateRows: number;
+  missingPlates: number;
+  periodStart: string;
+  periodEnd: string;
+  statusCounts: Record<string, number>;
 };
 
 export type RankingEntry = {
@@ -64,8 +84,10 @@ export type RankingEntry = {
   normalizedName: string;
   teamId: string | null;
   team: string;
+  cooperativeCodes: string[];
   plates: number;
   revenue: number;
+  averageTicket: number;
   movement: number;
   newAdhesions: number;
 };
@@ -73,10 +95,13 @@ export type RankingEntry = {
 export type TeamRankingEntry = {
   position: number;
   teamId: string;
+  cooperativeCode: string;
   team: string;
   plates: number;
   revenue: number;
+  averageTicket: number;
   members: number;
+  movement: number;
 };
 
 export type Ranking = {

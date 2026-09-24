@@ -1,24 +1,26 @@
-RANKING BR — VERSÃO 0.2.0
+RANKING BR — VERSÃO 0.2.3
 
 1. GITHUB
 Substitua os arquivos do repositório pelo conteúdo desta pasta.
 O package.json deve ficar na raiz.
 
 2. FIREBASE
-Publique novamente o arquivo firestore.rules.
+As regras não mudaram desde a v0.2.0. Não é necessário publicá-las novamente.
 Não ative o Firebase Storage.
 
 3. APPS SCRIPT
-Atualize o Code.gs pela opção Gerenciar implantações > Editar > Nova versão.
+Atualize o Code.gs apenas se quiser que o endpoint informe a versão 0.2.3.
 A URL /exec permanece a mesma.
 
 4. VERCEL
 O envio ao GitHub iniciará o deploy automaticamente.
 As variáveis de ambiente atuais continuam válidas.
 
-5. PRIMEIRO USO
-Crie as equipes, importe o Gestão Adesão .xls, confira os participantes,
-defina as equipes e confirme o fechamento. Depois cadastre as fotos em
-Executivos e gere a arte do Top 3.
+5. TESTE
+Confira os códigos e nomes em Equipes, importe os dois Gestão Adesão .xls
+(SGA Leves e SGA Truck) e confirme o fechamento. Os dados serão somados em
+um único ranking e as equipes serão vinculadas automaticamente pela cooperativa.
+A partir do segundo fechamento,
+o sistema mostrará quem subiu, desceu ou manteve a posição.
 
 Leia o README.md para o passo a passo completo.

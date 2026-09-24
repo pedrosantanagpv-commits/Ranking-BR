@@ -1,5 +1,33 @@
 # Histórico de versões
 
+## v0.2.3 — Consolidação SGA Leves + SGA Truck
+
+- duas áreas obrigatórias de importação, uma para cada SGA;
+- leitura paralela dos relatórios Gestão Adesão de Leves e Truck;
+- união automática de executivos e cooperativas em um único fechamento;
+- soma de placas e previsão de faturamento nos dois sistemas;
+- ticket médio calculado sobre o total consolidado;
+- remoção e sinalização de chassis repetidos entre os sistemas;
+- auditoria separada de cada arquivo e do resultado consolidado;
+- histórico salva a identificação dos dois relatórios usados.
+
+## v0.2.2 — Equipes por cooperativa
+
+- leitura automática do código `BR.xx` na coluna Cooperativa;
+- mapeamento padrão das 11 equipes informadas;
+- inclusão de todas as demais cooperativas no ranking;
+- sinalização de códigos ainda sem nome de equipe configurado;
+- vínculo automático dos executivos, sem seleção manual repetitiva;
+- ranking coletivo calculado diretamente pelos veículos ativos de cada cooperativa.
+
+## v0.2.1 — Evolução e indicadores financeiros
+
+- coluna `Prev. Fat.` nos rankings de executivos e equipes;
+- coluna `T. Médio`, calculada pela previsão de faturamento dividida pela quantidade de placas;
+- movimentação de equipes em relação ao fechamento anterior;
+- sinalização de quem subiu, desceu ou manteve a posição;
+- prévia de importação com placas, previsão de faturamento e ticket médio.
+
 ## v0.2.0 — Ranking funcional
 
 - importação real do relatório Gestão Adesão `.xls`;

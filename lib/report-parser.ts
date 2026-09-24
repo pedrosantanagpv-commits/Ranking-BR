@@ -1,4 +1,5 @@
-import type { ParsedReport, ReportRow } from "./types";
+import type { ParsedReport, ReportRow, ReportSystem, SourceReportSummary } from "./types";
+import { extractCooperativeCode } from "./team-mapping";
 
 export function normalizeText(value: string) {
   return value
@@ -34,6 +35,75 @@ async function hashFile(file: File) {
   const buffer = await file.arrayBuffer();
   const digest = await crypto.subtle.digest("SHA-256", buffer);
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function hashText(value: string) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function summarizeSource(report: ParsedReport, system: ReportSystem): SourceReportSummary {
+  return {
+    system,
+    fileName: report.fileName,
+    fileHash: report.fileHash,
+    totalRows: report.totalRows,
+    duplicateRows: report.duplicateRows,
+    missingPlates: report.missingPlates,
+    periodStart: report.periodStart,
+    periodEnd: report.periodEnd,
+    statusCounts: report.statusCounts,
+  };
+}
+
+function selectDuplicateRow(current: ReportRow, candidate: ReportRow) {
+  const currentActive = current.situacaoNormalizada === "ATIVO";
+  const candidateActive = candidate.situacaoNormalizada === "ATIVO";
+  if (candidateActive !== currentActive) return candidateActive ? candidate : current;
+  return candidate.dataContrato > current.dataContrato ? candidate : current;
+}
+
+export async function mergeManagementReports(leves: ParsedReport, truck: ParsedReport): Promise<ParsedReport> {
+  if (leves.fileHash === truck.fileHash) {
+    throw new Error("Os relatórios de Leves e Truck são o mesmo arquivo. Selecione um arquivo diferente em cada campo.");
+  }
+
+  const uniqueRows = new Map<string, ReportRow>();
+  leves.rows.forEach((row) => uniqueRows.set(row.chassi || normalizeText(row.placa), row));
+
+  let crossSourceDuplicates = 0;
+  truck.rows.forEach((row) => {
+    const key = row.chassi || normalizeText(row.placa);
+    const existing = uniqueRows.get(key);
+    if (existing) {
+      crossSourceDuplicates += 1;
+      uniqueRows.set(key, selectDuplicateRow(existing, row));
+    } else {
+      uniqueRows.set(key, row);
+    }
+  });
+
+  const rows = Array.from(uniqueRows.values());
+  const dates = rows.map((row) => row.dataContrato).filter(Boolean).sort();
+  const fileHash = await hashText(`LEVES:${leves.fileHash}|TRUCK:${truck.fileHash}`);
+
+  return {
+    fileName: `Leves: ${leves.fileName} | Truck: ${truck.fileName}`,
+    fileHash,
+    rows,
+    totalRows: rows.length,
+    duplicateRows: leves.duplicateRows + truck.duplicateRows + crossSourceDuplicates,
+    crossSourceDuplicates,
+    missingPlates: rows.filter((row) => !row.placa).length,
+    periodStart: dates[0],
+    periodEnd: dates[dates.length - 1],
+    generatedAt: [leves.generatedAt, truck.generatedAt].filter(Boolean).sort().at(-1),
+    generatedBy: [leves.generatedBy, truck.generatedBy].filter(Boolean).join(" / ") || undefined,
+    statusCounts: countBy(rows, (row) => row.situacao),
+    adhesionCounts: countBy(rows, (row) => row.tipoAdesao),
+    vehicleTypeCounts: countBy(rows, (row) => row.tipoVeiculo),
+    sourceReports: [summarizeSource(leves, "LEVES"), summarizeSource(truck, "TRUCK")],
+  };
 }
 
 export async function parseManagementReport(file: File): Promise<ParsedReport> {
@@ -95,6 +165,7 @@ export async function parseManagementReport(file: File): Promise<ParsedReport> {
       placa: cells[indexes.placa],
       tipoVeiculo: cells[indexes.tipoVeiculo],
       cooperativa: cells[indexes.cooperativa],
+      cooperativaCodigo: extractCooperativeCode(cells[indexes.cooperativa]),
       executivo,
       executivoNormalizado: normalizeText(executivo),
       situacao,

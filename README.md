@@ -1,4 +1,4 @@
-# Ranking BR — v0.2.0
+# Ranking BR — v0.2.3
 
 Versão funcional da plataforma de ranking das cooperativas BR, construída com Next.js, Vercel e Firebase.
 
@@ -6,7 +6,8 @@ Versão funcional da plataforma de ranking das cooperativas BR, construída com 
 
 - login real com Firebase Authentication;
 - perfis `DEV` e `ADMIN`;
-- leitura do relatório **Gestão Adesão** no formato `.xls` exportado pelo sistema;
+- leitura de dois relatórios **Gestão Adesão** no formato `.xls`, um do SGA Leves e outro do SGA Truck;
+- consolidação dos dois sistemas em um único ranking, somando placas e previsão por executivo e cooperativa;
 - reconhecimento automático de executivos pelo campo `Voluntário`;
 - contagem apenas de veículos com situação `ATIVO`;
 - 1 ponto por veículo e desempate pela maior previsão financeira;
@@ -17,6 +18,10 @@ Versão funcional da plataforma de ranking das cooperativas BR, construída com 
 - histórico de fechamentos com a equipe preservada no momento da confirmação;
 - ranking de executivos e de equipes;
 - comparação de posição com o fechamento anterior;
+- movimentação de posição para executivos e equipes;
+- previsão de faturamento e ticket médio individual e por equipe;
+- vínculo automático da equipe pelo código da cooperativa no relatório;
+- inclusão de todas as cooperativas BR, inclusive as ainda sem nome de equipe configurado;
 - dashboard com dados reais;
 - geração da arte Top 3 em Feed 4:5 ou Story 9:16;
 - download da arte em PNG.
@@ -79,10 +84,10 @@ As variáveis `NEXT_PUBLIC_` da configuração Web do Firebase podem permanecer 
 
 ## Primeiro uso recomendado
 
-1. abra **Equipes** e crie os nomes das equipes que já conhece;
-2. abra **Importar relatório** e selecione o Gestão Adesão `.xls`;
+1. abra **Equipes** e confira os códigos BR e os nomes das equipes;
+2. abra **Importar relatório** e selecione o Gestão Adesão `.xls` do SGA Leves e o do SGA Truck;
 3. confira os  participantes identificados;
-4. escolha a equipe de cada pessoa na própria prévia;
+4. confira a equipe identificada automaticamente pela cooperativa;
 5. confirme o fechamento;
 6. abra **Executivos** para ajustar nomes e cadastrar as fotos;
 7. consulte **Rankings**;
@@ -99,11 +104,15 @@ npm run dev
 
 Depois acesse `http://localhost:3000`.
 
-## Regras fixadas para a v0.2.0
+## Regras fixadas para a v0.2.1
 
 - entram no ranking somente linhas com situação `ATIVO`;
 - nova adesão, produção e troca de titularidade contam quando o veículo estiver ativo;
-- cada chassi único vale 1 ponto;
+- cada chassi único vale 1 ponto, mesmo se aparecer nos dois sistemas;
 - o primeiro desempate é a maior soma da previsão financeira;
+- o ticket médio é calculado por `previsão de faturamento ÷ quantidade de placas`;
+- a movimentação compara cada posição com o fechamento imediatamente anterior;
+- a cooperativa do relatório define a equipe do executivo e o agrupamento coletivo;
+- todas as cooperativas participam; códigos ainda não configurados ficam sinalizados até receberem um nome de equipe;
 - a equipe fica registrada como estava na data do fechamento;
-- o mesmo arquivo não pode ser confirmado duas vezes.
+- o mesmo par de relatórios não pode ser confirmado duas vezes.

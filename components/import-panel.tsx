@@ -7,13 +7,16 @@ import { useAuth } from "./auth-provider";
 import { getLatestRanking, listExecutives, listTeams, saveClosing } from "@/lib/firestore-service";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { buildRanking, defaultClosingLabel } from "@/lib/ranking";
-import { parseManagementReport } from "@/lib/report-parser";
+import { mergeManagementReports, parseManagementReport } from "@/lib/report-parser";
+import { mergeDefaultTeams, resolveReportTeams } from "@/lib/team-mapping";
 import type { ParsedReport, RankingEntry, Team } from "@/lib/types";
 
 export function ImportPanel() {
   const { user, configured } = useAuth();
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [file, setFile] = useState<File | null>(null);
+  const levesInputRef = useRef<HTMLInputElement>(null);
+  const truckInputRef = useRef<HTMLInputElement>(null);
+  const [levesFile, setLevesFile] = useState<File | null>(null);
+  const [truckFile, setTruckFile] = useState<File | null>(null);
   const [report, setReport] = useState<ParsedReport | null>(null);
   const [entries, setEntries] = useState<RankingEntry[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -27,51 +30,50 @@ export function ImportPanel() {
     if (!configured) return;
     listTeams()
       .then((teamItems) => {
-        setTeams(teamItems.filter((team) => team.ativo));
+        setTeams(mergeDefaultTeams(teamItems).filter((team) => team.ativo));
       })
       .catch((caught) => setError(caught instanceof Error ? caught.message : "Não foi possível carregar os cadastros."));
   }, [configured]);
 
   const totalRevenue = useMemo(() => entries.reduce((sum, entry) => sum + entry.revenue, 0), [entries]);
-  const unassignedCount = entries.filter((entry) => !entry.teamId).length;
+  const unconfiguredTeams = teams.filter((team) => !team.configurada && report?.rows.some((row) => row.cooperativaCodigo === team.codigoCooperativa));
 
   const reset = () => {
-    setFile(null);
+    setLevesFile(null);
+    setTruckFile(null);
     setReport(null);
     setEntries([]);
     setLabel("");
     setSavedRankingId("");
     setError("");
-    if (inputRef.current) inputRef.current.value = "";
+    if (levesInputRef.current) levesInputRef.current.value = "";
+    if (truckInputRef.current) truckInputRef.current.value = "";
   };
 
-  async function processFile() {
-    if (!file) return;
+  async function processFiles() {
+    if (!levesFile || !truckFile) return;
     setProcessing(true);
     setError("");
     try {
-      const parsed = await parseManagementReport(file);
+      const [levesReport, truckReport] = await Promise.all([
+        parseManagementReport(levesFile),
+        parseManagementReport(truckFile),
+      ]);
+      const parsed = await mergeManagementReports(levesReport, truckReport);
       const [latest, executiveItems, teamItems] = configured
         ? await Promise.all([getLatestRanking(), listExecutives(), listTeams()])
         : [undefined, [], []];
       const activeExecutives = executiveItems.filter((item) => item.ativo);
-      const activeTeams = teamItems.filter((item) => item.ativo);
+      const activeTeams = resolveReportTeams(parsed, teamItems).filter((item) => item.ativo);
       setTeams(activeTeams);
       setReport(parsed);
       setEntries(buildRanking(parsed, activeExecutives, activeTeams, latest));
       setLabel(defaultClosingLabel(parsed.periodEnd));
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Não foi possível processar o relatório.");
+      setError(caught instanceof Error ? caught.message : "Não foi possível processar os relatórios.");
     } finally {
       setProcessing(false);
     }
-  }
-
-  function updateTeam(normalizedName: string, teamId: string) {
-    const team = teams.find((item) => item.id === teamId);
-    setEntries((current) => current.map((entry) => entry.normalizedName === normalizedName
-      ? { ...entry, teamId: team?.id ?? null, team: team?.nome ?? "Sem equipe" }
-      : entry));
   }
 
   async function confirmClosing() {
@@ -98,7 +100,7 @@ export function ImportPanel() {
         <div className="success-panel__actions">
           <Link className="button button--primary" href="/rankings">Ver ranking</Link>
           <Link className="button button--secondary" href="/gerar-arte">Gerar arte do Top 3</Link>
-          <button className="button button--ghost-light" onClick={reset}>Importar outro relatório</button>
+          <button className="button button--ghost-light" onClick={reset}>Criar outro fechamento</button>
         </div>
       </section>
     );
@@ -110,12 +112,12 @@ export function ImportPanel() {
         <section className="panel import-preview">
           <div className="panel__header">
             <div><span className="section-kicker">Etapa 2 de 3</span><h3>Validar fechamento</h3></div>
-            <button className="button button--subtle" onClick={reset}>Trocar arquivo</button>
+            <button className="button button--subtle" onClick={reset}>Trocar arquivos</button>
           </div>
 
           <div className="preview-metrics">
             <article><span>Veículos ativos</span><strong>{entries.reduce((sum, item) => sum + item.plates, 0)}</strong><small>de {report.totalRows} registros</small></article>
-            <article><span>Executivos</span><strong>{entries.length}</strong><small>{unassignedCount} sem equipe</small></article>
+            <article><span>Executivos</span><strong>{entries.length}</strong><small>vínculo automático</small></article>
             <article><span>Previsão</span><strong>{formatCurrency(totalRevenue)}</strong><small>desempate do ranking</small></article>
             <article><span>Período</span><strong>{formatDate(report.periodStart)}</strong><small>até {formatDate(report.periodEnd)}</small></article>
           </div>
@@ -125,25 +127,21 @@ export function ImportPanel() {
             <input className="text-input" value={label} onChange={(event) => setLabel(event.target.value)} maxLength={80} />
           </label>
 
-          {unassignedCount > 0 && (
-            <div className="notice notice--warning"><AlertCircle size={19} /><span>Existem {unassignedCount} participantes sem equipe. Você pode vincular agora nos campos abaixo ou confirmar como “Sem equipe”.</span></div>
+          {unconfiguredTeams.length > 0 && (
+            <div className="notice notice--warning"><AlertCircle size={19} /><span>{unconfiguredTeams.length} {unconfiguredTeams.length === 1 ? "cooperativa ainda não possui" : "cooperativas ainda não possuem"} nome de equipe configurado. Os resultados serão preservados e você poderá definir os nomes em Equipes.</span></div>
           )}
 
           <div className="ranking-table-wrap preview-table-wrap">
             <table className="ranking-table">
-              <thead><tr><th>Pos.</th><th>Executivo</th><th>Equipe neste fechamento</th><th>Ativos</th><th>Previsão</th></tr></thead>
+              <thead><tr><th>Pos.</th><th>Executivo</th><th>Equipe neste fechamento</th><th>Placas</th><th>Prev. Fat.</th><th>T. Médio</th></tr></thead>
               <tbody>{entries.map((entry) => (
                 <tr key={entry.normalizedName}>
                   <td><span className={`position-badge position-badge--${entry.position}`}>{entry.position}º</span></td>
                   <td><strong>{entry.name}</strong>{!entry.executiveId && <small className="new-record">Novo cadastro</small>}</td>
-                  <td>
-                    <select className="table-select" value={entry.teamId ?? ""} onChange={(event) => updateTeam(entry.normalizedName, event.target.value)}>
-                      <option value="">Sem equipe</option>
-                      {teams.map((team) => <option value={team.id} key={team.id}>{team.nome}</option>)}
-                    </select>
-                  </td>
+                  <td><span className="team-tag">{entry.team}</span></td>
                   <td><strong>{entry.plates}</strong></td>
                   <td>{formatCurrency(entry.revenue)}</td>
+                  <td>{formatCurrency(entry.averageTicket)}</td>
                 </tr>
               ))}</tbody>
             </table>
@@ -151,7 +149,7 @@ export function ImportPanel() {
 
           {error && <div className="notice notice--error"><AlertCircle size={19} /><span>{error}</span></div>}
           <div className="confirmation-bar">
-            <div><ShieldCheck size={20} /><span><strong>Regra aplicada:</strong> somente ATIVO, 1 ponto por veículo e desempate por previsão.</span></div>
+            <div><ShieldCheck size={20} /><span><strong>Regra aplicada:</strong> somente ATIVO, equipe pela cooperativa BR, 1 ponto por veículo e desempate por previsão.</span></div>
             <button className="button button--primary" disabled={saving || !label.trim()} onClick={confirmClosing}>
               {saving ? <><LoaderCircle className="spin" size={18} /> Salvando...</> : "Confirmar e salvar ranking"}
             </button>
@@ -160,15 +158,27 @@ export function ImportPanel() {
 
         <aside className="panel report-audit">
           <span className="section-kicker">Auditoria da leitura</span>
-          <h3>Gestão Adesão</h3>
-          <dl>
-            <div><dt>Arquivo</dt><dd>{report.fileName}</dd></div>
-            <div><dt>Registros únicos</dt><dd>{report.totalRows}</dd></div>
-            <div><dt>Sem placa</dt><dd>{report.missingPlates} <small>identificados pelo chassi</small></dd></div>
-            <div><dt>Duplicidades removidas</dt><dd>{report.duplicateRows}</dd></div>
-            {Object.entries(report.statusCounts).map(([status, count]) => <div key={status}><dt>{status}</dt><dd>{count}</dd></div>)}
-          </dl>
-          <p>O arquivo foi lido apenas no navegador. Nomes de associados, placas e chassis não serão gravados no Firebase.</p>
+          <h3>Leves + Truck</h3>
+          {report.sourceReports?.map((source) => (
+            <section className="audit-source" key={source.system}>
+              <strong>{source.system === "LEVES" ? "SGA Leves" : "SGA Truck"}</strong>
+              <dl>
+                <div><dt>Arquivo</dt><dd>{source.fileName}</dd></div>
+                <div><dt>Registros únicos</dt><dd>{source.totalRows}</dd></div>
+                <div><dt>Duplicidades internas</dt><dd>{source.duplicateRows}</dd></div>
+              </dl>
+            </section>
+          ))}
+          <section className="audit-source audit-source--total">
+            <strong>Resultado consolidado</strong>
+            <dl>
+              <div><dt>Registros únicos</dt><dd>{report.totalRows}</dd></div>
+              <div><dt>Sem placa</dt><dd>{report.missingPlates} <small>identificados pelo chassi</small></dd></div>
+              <div><dt>Repetidos entre sistemas</dt><dd>{report.crossSourceDuplicates ?? 0}</dd></div>
+              {Object.entries(report.statusCounts).map(([status, count]) => <div key={status}><dt>{status}</dt><dd>{count}</dd></div>)}
+            </dl>
+          </section>
+          <p>Os dois arquivos foram lidos apenas no navegador. Nomes de associados, placas e chassis não serão gravados no Firebase.</p>
         </aside>
       </div>
     );
@@ -177,33 +187,60 @@ export function ImportPanel() {
   return (
     <div className="two-column-layout">
       <section className="panel import-card">
-        <div className="panel__header"><div><span className="section-kicker">Etapa 1 de 3</span><h3>Adicionar relatório</h3></div></div>
-        <button
-          className="dropzone"
-          onClick={() => inputRef.current?.click()}
-          onDragOver={(event) => event.preventDefault()}
-          onDrop={(event) => { event.preventDefault(); setFile(event.dataTransfer.files[0] ?? null); }}
-        >
-          <span className="dropzone__icon"><UploadCloud size={30} /></span>
-          <strong>Arraste o Gestão Adesão para cá</strong>
-          <span>ou clique para selecionar o arquivo</span>
-          <small>Formato exportado pelo sistema: .xls</small>
-        </button>
-        <input ref={inputRef} className="sr-only" type="file" accept=".xls,application/vnd.ms-excel" onChange={(event) => setFile(event.target.files?.[0] ?? null)} />
+        <div className="panel__header"><div><span className="section-kicker">Etapa 1 de 3</span><h3>Adicionar os dois relatórios</h3></div></div>
+        <div className="dual-upload-grid">
+          <section className="upload-source-card">
+            <span className="upload-source-card__label">1 · SGA Leves</span>
+            <button
+              className="dropzone dropzone--compact"
+              onClick={() => levesInputRef.current?.click()}
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={(event) => { event.preventDefault(); setLevesFile(event.dataTransfer.files[0] ?? null); }}
+            >
+              <span className="dropzone__icon"><UploadCloud size={27} /></span>
+              <strong>Relatório de Leves</strong>
+              <span>arraste ou clique para selecionar</span>
+              <small>Gestão Adesão · .xls</small>
+            </button>
+            <input ref={levesInputRef} className="sr-only" type="file" accept=".xls,application/vnd.ms-excel" onChange={(event) => setLevesFile(event.target.files?.[0] ?? null)} />
+            {levesFile ? (
+              <div className="selected-file">
+                <FileSpreadsheet size={24} />
+                <div><strong>{levesFile.name}</strong><span>{(levesFile.size / 1024).toFixed(1)} KB · pronto</span></div>
+                <button className="icon-button" aria-label="Remover relatório de Leves" onClick={() => setLevesFile(null)}><X size={18} /></button>
+              </div>
+            ) : <div className="empty-file-note">Relatório de Leves não selecionado.</div>}
+          </section>
 
-        {file ? (
-          <div className="selected-file">
-            <FileSpreadsheet size={26} />
-            <div><strong>{file.name}</strong><span>{(file.size / 1024).toFixed(1)} KB · pronto para leitura</span></div>
-            <button className="icon-button" aria-label="Remover arquivo" onClick={() => setFile(null)}><X size={18} /></button>
-          </div>
-        ) : <div className="empty-file-note">Nenhum arquivo selecionado.</div>}
+          <section className="upload-source-card">
+            <span className="upload-source-card__label">2 · SGA Truck</span>
+            <button
+              className="dropzone dropzone--compact"
+              onClick={() => truckInputRef.current?.click()}
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={(event) => { event.preventDefault(); setTruckFile(event.dataTransfer.files[0] ?? null); }}
+            >
+              <span className="dropzone__icon"><UploadCloud size={27} /></span>
+              <strong>Relatório de Truck</strong>
+              <span>arraste ou clique para selecionar</span>
+              <small>Gestão Adesão · .xls</small>
+            </button>
+            <input ref={truckInputRef} className="sr-only" type="file" accept=".xls,application/vnd.ms-excel" onChange={(event) => setTruckFile(event.target.files?.[0] ?? null)} />
+            {truckFile ? (
+              <div className="selected-file">
+                <FileSpreadsheet size={24} />
+                <div><strong>{truckFile.name}</strong><span>{(truckFile.size / 1024).toFixed(1)} KB · pronto</span></div>
+                <button className="icon-button" aria-label="Remover relatório de Truck" onClick={() => setTruckFile(null)}><X size={18} /></button>
+              </div>
+            ) : <div className="empty-file-note">Relatório de Truck não selecionado.</div>}
+          </section>
+        </div>
 
         {error && <div className="notice notice--error"><AlertCircle size={19} /><span>{error}</span></div>}
         <div className="form-actions">
           <button className="button button--ghost" onClick={reset}>Limpar</button>
-          <button className="button button--primary" disabled={!file || processing} onClick={processFile}>
-            {processing ? <><LoaderCircle className="spin" size={18} /> Lendo relatório...</> : "Processar relatório"}
+          <button className="button button--primary" disabled={!levesFile || !truckFile || processing} onClick={processFiles}>
+            {processing ? <><LoaderCircle className="spin" size={18} /> Consolidando...</> : "Processar os dois relatórios"}
           </button>
         </div>
         <p className="feature-note">Nada será salvo antes da sua conferência e confirmação.</p>
@@ -211,13 +248,13 @@ export function ImportPanel() {
 
       <aside className="panel guide-card">
         <span className="section-kicker">Como funciona</span>
-        <h3>Do relatório ao ranking</h3>
+        <h3>Dos relatórios ao ranking</h3>
         <ol className="step-list">
-          <li><span>1</span><div><strong>Envie o Gestão Adesão</strong><p>Use o arquivo .xls exportado pelo sistema.</p></div></li>
-          <li><span>2</span><div><strong>Confira participantes e equipes</strong><p>Novos nomes são identificados automaticamente.</p></div></li>
-          <li><span>3</span><div><strong>Confirme o fechamento</strong><p>O ranking e a equipe daquele momento entram no histórico.</p></div></li>
+          <li><span>1</span><div><strong>Envie Leves e Truck</strong><p>Use um Gestão Adesão .xls de cada SGA.</p></div></li>
+          <li><span>2</span><div><strong>Confira o consolidado</strong><p>Participantes iguais são somados automaticamente.</p></div></li>
+          <li><span>3</span><div><strong>Confirme o fechamento</strong><p>Um único ranking combinado entra no histórico.</p></div></li>
         </ol>
-        <div className="security-box"><CheckCircle2 size={20} /><span>Somente os resultados consolidados são salvos. O relatório original não é armazenado.</span></div>
+        <div className="security-box"><CheckCircle2 size={20} /><span>Somente o resultado consolidado é salvo. Os dois relatórios originais não são armazenados.</span></div>
       </aside>
     </div>
   );
