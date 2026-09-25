@@ -57,9 +57,6 @@ function summarizeSource(report: ParsedReport, system: ReportSystem): SourceRepo
 }
 
 function selectDuplicateRow(current: ReportRow, candidate: ReportRow) {
-  const currentActive = current.situacaoNormalizada === "ATIVO";
-  const candidateActive = candidate.situacaoNormalizada === "ATIVO";
-  if (candidateActive !== currentActive) return candidateActive ? candidate : current;
   return candidate.dataContrato > current.dataContrato ? candidate : current;
 }
 
@@ -179,7 +176,11 @@ export async function parseManagementReport(file: File): Promise<ParsedReport> {
   });
 
   const uniqueRows = new Map<string, ReportRow>();
-  rawRows.forEach((row) => uniqueRows.set(row.chassi || normalizeText(row.placa), row));
+  rawRows.forEach((row) => {
+    const key = row.chassi || normalizeText(row.placa);
+    const existing = uniqueRows.get(key);
+    uniqueRows.set(key, existing ? selectDuplicateRow(existing, row) : row);
+  });
   const rows = Array.from(uniqueRows.values());
   const dates = rows.map((row) => row.dataContrato).filter(Boolean).sort();
 

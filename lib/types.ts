@@ -136,6 +136,7 @@ export type ImportAudit = {
   generatedBy?: string | null;
   totalRows: number;
   activeRows: number;
+  consideredRows?: number;
   duplicateRows: number;
   missingPlates: number;
   statusCounts: Record<string, number>;

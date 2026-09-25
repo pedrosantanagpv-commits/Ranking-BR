@@ -96,7 +96,7 @@ export function ImportPanel() {
         <span className="success-panel__icon"><CheckCircle2 size={38} /></span>
         <span className="section-kicker">Fechamento confirmado</span>
         <h2>{label}</h2>
-        <p>O ranking foi salvo com {entries.reduce((sum, item) => sum + item.plates, 0)} veículos ativos e já faz parte do histórico.</p>
+        <p>O ranking foi salvo com {entries.reduce((sum, item) => sum + item.plates, 0)} placas produzidas no período e já faz parte do histórico.</p>
         <div className="success-panel__actions">
           <Link className="button button--primary" href="/rankings">Ver ranking</Link>
           <Link className="button button--secondary" href="/gerar-arte">Gerar arte do Top 3</Link>
@@ -116,7 +116,7 @@ export function ImportPanel() {
           </div>
 
           <div className="preview-metrics">
-            <article><span>Veículos ativos</span><strong>{entries.reduce((sum, item) => sum + item.plates, 0)}</strong><small>de {report.totalRows} registros</small></article>
+            <article><span>Placas produzidas</span><strong>{entries.reduce((sum, item) => sum + item.plates, 0)}</strong><small>todas as situações</small></article>
             <article><span>Executivos</span><strong>{entries.length}</strong><small>vínculo automático</small></article>
             <article><span>Previsão</span><strong>{formatCurrency(totalRevenue)}</strong><small>desempate do ranking</small></article>
             <article><span>Período</span><strong>{formatDate(report.periodStart)}</strong><small>até {formatDate(report.periodEnd)}</small></article>
@@ -149,7 +149,7 @@ export function ImportPanel() {
 
           {error && <div className="notice notice--error"><AlertCircle size={19} /><span>{error}</span></div>}
           <div className="confirmation-bar">
-            <div><ShieldCheck size={20} /><span><strong>Regra aplicada:</strong> somente ATIVO, equipe pela cooperativa BR, 1 ponto por veículo e desempate por previsão.</span></div>
+            <div><ShieldCheck size={20} /><span><strong>Regra aplicada:</strong> toda produção do período, independentemente da situação, equipe pela cooperativa BR, 1 ponto por placa e desempate por previsão.</span></div>
             <button className="button button--primary" disabled={saving || !label.trim()} onClick={confirmClosing}>
               {saving ? <><LoaderCircle className="spin" size={18} /> Salvando...</> : "Confirmar e salvar ranking"}
             </button>

@@ -68,7 +68,7 @@ export function ClosingComparison({ rankings }: { rankings: Ranking[] }) {
     </div>
 
     <div className="comparison-totals">
-      <article><span>Veículos ativos</span><strong>{comparison.totalVehicles}</strong><small className={vehicleDelta >= 0 ? "positive" : "negative"}>{signed(vehicleDelta)} em relação à base</small></article>
+      <article><span>Placas produzidas</span><strong>{comparison.totalVehicles}</strong><small className={vehicleDelta >= 0 ? "positive" : "negative"}>{signed(vehicleDelta)} em relação à base</small></article>
       <article><span>Previsão total</span><strong>{formatCurrency(comparison.totalRevenue)}</strong><small className={revenueDelta >= 0 ? "positive" : "negative"}>{signed(revenueDelta, true)} em relação à base</small></article>
       <article><span>Executivos</span><strong>{comparison.totalExecutives}</strong><small className={executiveDelta >= 0 ? "positive" : "negative"}>{signed(executiveDelta)} em relação à base</small></article>
     </div>

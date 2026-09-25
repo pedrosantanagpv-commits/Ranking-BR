@@ -1,4 +1,4 @@
-# Ranking BR — v0.2.7
+# Ranking BR — v0.2.8
 
 Versão funcional da plataforma de ranking das cooperativas BR, construída com Next.js, Vercel e Firebase.
 
@@ -9,7 +9,7 @@ Versão funcional da plataforma de ranking das cooperativas BR, construída com 
 - leitura de dois relatórios **Gestão Adesão** no formato `.xls`, um do SGA Leves e outro do SGA Truck;
 - consolidação dos dois sistemas em um único ranking, somando placas e previsão por executivo e cooperativa;
 - reconhecimento automático de executivos pelo campo `Voluntário`;
-- contagem apenas de veículos com situação `ATIVO`;
+- contagem de toda placa produzida no período, independentemente da situação atual;
 - 1 ponto por veículo e desempate pela maior previsão financeira;
 - identificação de duplicidades pelo chassi;
 - prévia antes de gravar qualquer dado;
@@ -116,10 +116,10 @@ npm run dev
 
 Depois acesse `http://localhost:3000`.
 
-## Regras fixadas para a v0.2.7
+## Regras fixadas para a v0.2.8
 
-- entram no ranking somente linhas com situação `ATIVO`;
-- nova adesão, produção e troca de titularidade contam quando o veículo estiver ativo;
+- toda linha produzida no período entra no ranking, independentemente da situação atual do veículo;
+- situações como `ATIVO`, `C.A.T. - EVENTO COLISÃO`, pendências e demais estados informados pelo SGA são consideradas;
 - cada chassi único vale 1 ponto, mesmo se aparecer nos dois sistemas;
 - o primeiro desempate é a maior soma da previsão financeira;
 - o ticket médio é calculado por `previsão de faturamento ÷ quantidade de placas`;

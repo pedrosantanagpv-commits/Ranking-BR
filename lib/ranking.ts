@@ -19,9 +19,7 @@ export function buildRanking(
     cooperativeCounts: Map<string, number>;
   }>();
 
-  report.rows
-    .filter((row) => row.situacaoNormalizada === "ATIVO")
-    .forEach((row) => {
+  report.rows.forEach((row) => {
       const current = grouped.get(row.executivoNormalizado);
       const executive = executiveByName.get(row.executivoNormalizado);
       if (current) {
@@ -40,7 +38,7 @@ export function buildRanking(
         newAdhesions: row.tipoAdesaoNormalizado === "NOVA ADESAO" ? 1 : 0,
         cooperativeCounts: new Map(row.cooperativaCodigo ? [[row.cooperativaCodigo, 1]] : []),
       });
-    });
+  });
 
   const entries: RankingEntry[] = Array.from(grouped.values())
     .sort((a, b) => b.plates - a.plates || b.revenue - a.revenue || a.name.localeCompare(b.name, "pt-BR"))
@@ -68,7 +66,7 @@ export function buildTeamRanking(report: ParsedReport, teams: Team[], previousEn
   const previousByTeam = new Map(previousEntries.map((entry) => [entry.teamId, entry]));
   const teamByCode = new Map(teams.filter((item) => item.codigoCooperativa).map((item) => [item.codigoCooperativa as string, item]));
   const grouped = new Map<string, Omit<TeamRankingEntry, "position" | "movement" | "averageTicket" | "members"> & { memberNames: Set<string> }>();
-  report.rows.filter((row) => row.situacaoNormalizada === "ATIVO" && row.cooperativaCodigo).forEach((row) => {
+  report.rows.filter((row) => row.cooperativaCodigo).forEach((row) => {
     const team = teamByCode.get(row.cooperativaCodigo);
     if (!team) return;
     const current = grouped.get(team.id);

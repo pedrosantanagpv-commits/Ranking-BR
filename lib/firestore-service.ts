@@ -243,6 +243,7 @@ export async function saveClosing({
   const teamEntries = buildTeamRanking(report, teams, previousRanking?.teamEntries ?? []);
   const totalRevenue = Number(snappedEntries.reduce((sum, entry) => sum + entry.revenue, 0).toFixed(2));
   const totalVehicles = snappedEntries.reduce((sum, entry) => sum + entry.plates, 0);
+  const activeRows = report.rows.filter((row) => row.situacaoNormalizada === "ATIVO").length;
   const rankingReference = doc(collection(database, "rankings"));
 
   batch.set(importReference, {
@@ -254,7 +255,8 @@ export async function saveClosing({
     generatedAt: report.generatedAt ?? null,
     generatedBy: report.generatedBy ?? null,
     totalRows: report.totalRows,
-    activeRows: totalVehicles,
+    activeRows,
+    consideredRows: totalVehicles,
     duplicateRows: report.duplicateRows,
     missingPlates: report.missingPlates,
     statusCounts: report.statusCounts,
@@ -263,7 +265,7 @@ export async function saveClosing({
     sourceReports: report.sourceReports ?? [],
     crossSourceDuplicates: report.crossSourceDuplicates ?? 0,
     rankingId: rankingReference.id,
-    rulesVersion: "ativos-1-cooperativa-equipe-duplo-sga-v3",
+    rulesVersion: "todas-situacoes-producao-periodo-duplo-sga-v4",
     createdBy: user.uid,
     createdByName: user.nome,
     createdAt: serverTimestamp(),

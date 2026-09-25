@@ -1,5 +1,15 @@
 # Histórico de versões
 
+## v0.2.8 — Produção do período em todas as situações
+
+- inclusão de toda placa produzida no período, independentemente da situação atual no SGA;
+- situações como ATIVO e C.A.T. - EVENTO COLISÃO passam a participar igualmente do ranking;
+- remoção da preferência por registros ATIVO na deduplicação entre Leves e Truck;
+- escolha do registro duplicado pela data de contrato mais recente;
+- auditoria passa a separar veículos ativos de registros efetivamente considerados;
+- atualização dos textos do painel, ranking, comparações, arte e exportações para placas produzidas;
+- validação com os relatórios reais de 25/09/2026, contabilizando as 9 placas do Thiago.
+
 ## v0.2.7 — Hotfix de compatibilidade após exclusão
 
 - correção da exceção que podia derrubar a tela ao excluir o ranking mais recente;

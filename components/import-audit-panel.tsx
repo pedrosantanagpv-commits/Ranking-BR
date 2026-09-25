@@ -40,6 +40,9 @@ export function ImportAuditPanel({ ranking }: { ranking: Ranking }) {
   if (error) return <div className="notice notice--error"><AlertCircle size={18} /><span>{error}</span></div>;
   if (!audit) return <section className="panel audit-history-panel"><div className="panel__header"><div><span className="section-kicker">Rastreabilidade</span><h3>Auditoria da importação</h3></div></div><div className="inline-empty">Este fechamento não possui o registro detalhado da importação.</div></section>;
 
+  const considersAllStatuses = audit.rulesVersion?.startsWith("todas-situacoes-") ?? false;
+  const countLabel = considersAllStatuses ? "Registros considerados" : "Veículos ativos";
+
   return <section className="panel audit-history-panel">
     <div className="panel__header audit-history-panel__header"><div><span className="section-kicker">Rastreabilidade</span><h3>Auditoria da importação</h3><p>Confira a origem e as validações aplicadas neste fechamento.</p></div><span className="audit-verified"><ShieldCheck size={17} /> Fechamento rastreado</span></div>
     <div className="audit-metadata">
@@ -51,9 +54,9 @@ export function ImportAuditPanel({ ranking }: { ranking: Ranking }) {
 
     <div className="audit-source-grid">{(audit.sourceReports ?? []).map((source) => <article key={`${source.system}-${source.fileHash}`}>
       <div className="audit-source-title"><span>{source.system === "TRUCK" ? <Truck size={20} /> : <FileSpreadsheet size={20} />}</span><div><small>SGA {source.system === "TRUCK" ? "Truck" : "Leves"}</small><strong>{source.fileName}</strong></div></div>
-      <dl><div><dt>Linhas do arquivo</dt><dd>{source.totalRows}</dd></div><div><dt>Veículos ativos</dt><dd>{activeRows(source)}</dd></div><div><dt>Duplicidades internas</dt><dd>{source.duplicateRows}</dd></div><div><dt>Placas ausentes</dt><dd>{source.missingPlates}</dd></div><div><dt>Período</dt><dd>{formatDate(source.periodStart)} a {formatDate(source.periodEnd)}</dd></div></dl>
+      <dl><div><dt>Linhas do arquivo</dt><dd>{source.totalRows}</dd></div><div><dt>{countLabel}</dt><dd>{considersAllStatuses ? source.totalRows : activeRows(source)}</dd></div><div><dt>Duplicidades internas</dt><dd>{source.duplicateRows}</dd></div><div><dt>Placas ausentes</dt><dd>{source.missingPlates}</dd></div><div><dt>Período</dt><dd>{formatDate(source.periodStart)} a {formatDate(source.periodEnd)}</dd></div></dl>
     </article>)}</div>
 
-    <div className="audit-consolidated"><div><CheckCircle2 size={22} /><span>Resultado consolidado</span></div><dl><div><dt>Linhas analisadas</dt><dd>{audit.totalRows}</dd></div><div><dt>Veículos ativos</dt><dd>{audit.activeRows}</dd></div><div><dt>Duplicidades removidas</dt><dd>{audit.duplicateRows}</dd></div><div><dt>Repetidos entre sistemas</dt><dd>{audit.crossSourceDuplicates}</dd></div><div><dt>Placas ausentes</dt><dd>{audit.missingPlates}</dd></div></dl></div>
+    <div className="audit-consolidated"><div><CheckCircle2 size={22} /><span>Resultado consolidado</span></div><dl><div><dt>Linhas analisadas</dt><dd>{audit.totalRows}</dd></div><div><dt>{countLabel}</dt><dd>{considersAllStatuses ? (audit.consideredRows ?? ranking.totalVehicles) : audit.activeRows}</dd></div><div><dt>Duplicidades removidas</dt><dd>{audit.duplicateRows}</dd></div><div><dt>Repetidos entre sistemas</dt><dd>{audit.crossSourceDuplicates}</dd></div><div><dt>Placas ausentes</dt><dd>{audit.missingPlates}</dd></div></dl></div>
   </section>;
 }

@@ -135,7 +135,7 @@ async function drawArtwork(canvas: HTMLCanvasElement, ranking: Ranking, executiv
   context.fillText(target === "teams" ? "TOP 3 EQUIPES" : "TOP 3", width / 2, format === "story" ? 350 : 280);
   context.fillStyle = "#8d929b";
   context.font = "600 22px Arial";
-  context.fillText(target === "teams" ? "DESEMPENHO COLETIVO CONSOLIDADO" : "DESEMPENHO EM VEÍCULOS ATIVOS", width / 2, format === "story" ? 402 : 330);
+  context.fillText(target === "teams" ? "DESEMPENHO COLETIVO CONSOLIDADO" : "PRODUÇÃO CONSOLIDADA DO PERÍODO", width / 2, format === "story" ? 402 : 330);
 
   const executiveById = new Map(executives.map((executive) => [executive.id, executive]));
   const top = target === "executives"

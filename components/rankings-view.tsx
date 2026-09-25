@@ -86,7 +86,7 @@ export function RankingsView() {
     <section className="ranking-summary-card">
       <div><span className="section-kicker">Histórico de fechamentos</span><h2>{selected.label}</h2><p><CalendarDays size={16} /> {formatDate(selected.periodStart)} a {formatDate(selected.periodEnd)}</p></div>
       <div className="ranking-summary-actions"><label><span>Selecionar fechamento</span><select value={selected.id} onChange={(event) => { setSelectedId(event.target.value); setSuccess(""); setActionError(""); setExecutiveSearch(""); setTeamSearch(""); setTeamFilter("ALL"); }}>{rankings.map((ranking) => <option key={ranking.id} value={ranking.id}>{ranking.label}</option>)}</select></label><div className="ranking-export-actions"><button className="button button--export" type="button" onClick={() => exportRankingExcel(selected)}><FileSpreadsheet size={16} /> Excel</button><button className="button button--export" type="button" onClick={() => exportRankingPdf(selected)}><FileText size={16} /> PDF</button></div>{user && <button className="button button--danger" type="button" onClick={() => setDeleteTarget(selected)}><Trash2 size={17} /> Excluir ranking</button>}</div>
-      <div className="ranking-summary-stats"><span><strong>{selected.totalVehicles}</strong> veículos ativos</span><span><strong>{selected.totalExecutives}</strong> executivos</span><span><strong>{formatCurrency(selected.totalRevenue)}</strong> previsão</span></div>
+      <div className="ranking-summary-stats"><span><strong>{selected.totalVehicles}</strong> placas produzidas</span><span><strong>{selected.totalExecutives}</strong> executivos</span><span><strong>{formatCurrency(selected.totalRevenue)}</strong> previsão</span></div>
     </section>
 
     <ClosingComparison rankings={rankings} />
