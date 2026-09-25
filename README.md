@@ -1,4 +1,4 @@
-# Ranking BR — v0.2.3
+# Ranking BR — v0.2.4
 
 Versão funcional da plataforma de ranking das cooperativas BR, construída com Next.js, Vercel e Firebase.
 
@@ -14,7 +14,7 @@ Versão funcional da plataforma de ranking das cooperativas BR, construída com 
 - identificação de duplicidades pelo chassi;
 - prévia antes de gravar qualquer dado;
 - cadastro e composição de equipes;
-- cadastro de executivos, equipe e foto;
+- cadastro de executivos, nome curto para arte, foto e ajuste de enquadramento;
 - histórico de fechamentos com a equipe preservada no momento da confirmação;
 - ranking de executivos e de equipes;
 - comparação de posição com o fechamento anterior;
@@ -23,14 +23,16 @@ Versão funcional da plataforma de ranking das cooperativas BR, construída com 
 - vínculo automático da equipe pelo código da cooperativa no relatório;
 - inclusão de todas as cooperativas BR, inclusive as ainda sem nome de equipe configurado;
 - dashboard com dados reais;
-- geração da arte Top 3 em Feed 4:5 ou Story 9:16;
+- geração da arte Top 3 em Feed 4:5 ou Story 9:16, com previsão de faturamento e ticket médio;
+- aviso quando alguém do Top 3 ainda está sem foto;
+- exclusão confirmada de rankings incorretos por Administrador ou Desenvolvedor, liberando uma nova importação;
 - download da arte em PNG.
 
 ## Privacidade e armazenamento
 
 O relatório é processado localmente no navegador. Nomes de associados, placas e chassis não são enviados ao Firebase. O banco recebe somente dados consolidados do fechamento, como executivo, equipe, quantidade e previsão.
 
-O Firebase Storage não precisa ser ativado. As fotos dos executivos são reduzidas para 420 × 420 pixels e guardadas no próprio cadastro do Firestore. Isso mantém o projeto compatível com o plano Spark sem faturamento.
+O Firebase Storage não precisa ser ativado. As fotos dos executivos são reduzidas para até 720 pixels, preservando a proporção, e guardadas no próprio cadastro do Firestore. Isso permite ajustar posição e zoom na arte e mantém o projeto compatível com o plano Spark sem faturamento.
 
 ## Atualizar o GitHub
 
@@ -89,9 +91,9 @@ As variáveis `NEXT_PUBLIC_` da configuração Web do Firebase podem permanecer 
 3. confira os  participantes identificados;
 4. confira a equipe identificada automaticamente pela cooperativa;
 5. confirme o fechamento;
-6. abra **Executivos** para ajustar nomes e cadastrar as fotos;
+6. abra **Executivos** para definir o nome curto, cadastrar e enquadrar as fotos;
 7. consulte **Rankings**;
-8. abra **Gerar arte** e baixe o Top 3.
+8. abra **Gerar arte**, confira placas, previsão e ticket médio e baixe o Top 3.
 
 Os participantes ainda não cadastrados são criados automaticamente na confirmação. Nos próximos relatórios, o sistema os reconhecerá pelo nome normalizado, ignorando diferenças de letras maiúsculas e acentos.
 
@@ -104,7 +106,7 @@ npm run dev
 
 Depois acesse `http://localhost:3000`.
 
-## Regras fixadas para a v0.2.1
+## Regras fixadas para a v0.2.4
 
 - entram no ranking somente linhas com situação `ATIVO`;
 - nova adesão, produção e troca de titularidade contam quando o veículo estiver ativo;

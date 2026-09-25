@@ -1,5 +1,17 @@
 # Histórico de versões
 
+## v0.2.4 — Arte aprimorada e correção de fechamentos
+
+- nome curto opcional para uso exclusivo na arte, mantendo o nome completo do relatório para identificação;
+- redução automática do nome e proteção contra sobreposição no Top 3;
+- previsão de faturamento e ticket médio incluídos na arte de Feed e Story;
+- ajuste horizontal, vertical e de zoom das fotos dos participantes;
+- aviso com atalho de cadastro quando alguém do Top 3 estiver sem foto;
+- exclusão de ranking com confirmação para Administrador e Desenvolvedor;
+- remoção conjunta do registro de importação, permitindo corrigir e reenviar o mesmo par de relatórios;
+- preservação dos cadastros de executivos, fotos e equipes após excluir um fechamento;
+- recálculo das movimentações dos fechamentos restantes.
+
 ## v0.2.3 — Consolidação SGA Leves + SGA Truck
 
 - duas áreas obrigatórias de importação, uma para cada SGA;

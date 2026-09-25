@@ -1,10 +1,11 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertCircle, Download, ImageIcon, LoaderCircle } from "lucide-react";
 import { listExecutives, listRankings } from "@/lib/firestore-service";
-import { getInitials } from "@/lib/format";
+import { formatCurrency, getInitials } from "@/lib/format";
 import type { Executive, Ranking, RankingEntry } from "@/lib/types";
 
 type ArtFormat = "feed" | "story";
@@ -18,16 +19,44 @@ function loadImage(src: string) {
   });
 }
 
-function drawCirclePhoto(context: CanvasRenderingContext2D, image: HTMLImageElement | null, x: number, y: number, radius: number, name: string) {
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function automaticShortName(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length <= 2) return parts.join(" ");
+  const connectors = new Set(["DA", "DAS", "DE", "DO", "DOS", "E"]);
+  const meaningful = parts.filter((part) => !connectors.has(part.toUpperCase()));
+  return (meaningful.length >= 2 ? meaningful.slice(0, 2) : parts.slice(0, 2)).join(" ");
+}
+
+function artworkName(entry: RankingEntry, executive?: Executive) {
+  return executive?.nomeArte?.trim() || automaticShortName(executive?.nome || entry.name);
+}
+
+function drawCirclePhoto(
+  context: CanvasRenderingContext2D,
+  image: HTMLImageElement | null,
+  x: number,
+  y: number,
+  radius: number,
+  name: string,
+  executive?: Executive,
+) {
   context.save();
   context.beginPath();
   context.arc(x, y, radius, 0, Math.PI * 2);
   context.clip();
   if (image) {
-    const scale = Math.max((radius * 2) / image.naturalWidth, (radius * 2) / image.naturalHeight);
-    const width = image.naturalWidth * scale;
-    const height = image.naturalHeight * scale;
-    context.drawImage(image, x - width / 2, y - height / 2, width, height);
+    const diameter = radius * 2;
+    const zoom = clamp(executive?.fotoZoom ?? 1, 1, 2);
+    const focusX = clamp(executive?.fotoPosicaoX ?? 50, 0, 100) / 100;
+    const focusY = clamp(executive?.fotoPosicaoY ?? 50, 0, 100) / 100;
+    const scale = Math.max(diameter / image.naturalWidth, diameter / image.naturalHeight) * zoom;
+    const photoWidth = image.naturalWidth * scale;
+    const photoHeight = image.naturalHeight * scale;
+    context.drawImage(image, x - radius - (photoWidth - diameter) * focusX, y - radius - (photoHeight - diameter) * focusY, photoWidth, photoHeight);
   } else {
     context.fillStyle = "#20242b";
     context.fillRect(x - radius, y - radius, radius * 2, radius * 2);
@@ -45,7 +74,7 @@ function drawCirclePhoto(context: CanvasRenderingContext2D, image: HTMLImageElem
   context.stroke();
 }
 
-function fitText(context: CanvasRenderingContext2D, text: string, maxWidth: number, startSize: number, minSize = 24) {
+function fitText(context: CanvasRenderingContext2D, text: string, maxWidth: number, startSize: number, minSize = 20) {
   let size = startSize;
   while (size > minSize) {
     context.font = `900 ${size}px Arial`;
@@ -53,6 +82,13 @@ function fitText(context: CanvasRenderingContext2D, text: string, maxWidth: numb
     size -= 2;
   }
   return size;
+}
+
+function ellipsize(context: CanvasRenderingContext2D, text: string, maxWidth: number) {
+  if (context.measureText(text).width <= maxWidth) return text;
+  let shortened = text;
+  while (shortened.length > 1 && context.measureText(`${shortened}…`).width > maxWidth) shortened = shortened.slice(0, -1);
+  return `${shortened.trim()}…`;
 }
 
 async function drawArtwork(canvas: HTMLCanvasElement, ranking: Ranking, executives: Executive[], format: ArtFormat) {
@@ -70,15 +106,10 @@ async function drawArtwork(canvas: HTMLCanvasElement, ranking: Ranking, executiv
   gradient.addColorStop(1, "#241c02");
   context.fillStyle = gradient;
   context.fillRect(0, 0, width, height);
-
   context.strokeStyle = "rgba(255,196,0,.18)";
   context.lineWidth = 2;
-  context.beginPath();
-  context.arc(width + 40, 150, 390, 0, Math.PI * 2);
-  context.stroke();
-  context.beginPath();
-  context.arc(-90, height - 70, 330, 0, Math.PI * 2);
-  context.stroke();
+  context.beginPath(); context.arc(width + 40, 150, 390, 0, Math.PI * 2); context.stroke();
+  context.beginPath(); context.arc(-90, height - 70, 330, 0, Math.PI * 2); context.stroke();
 
   try {
     const logo = await loadImage("/assets/gpv-icon.png");
@@ -92,33 +123,37 @@ async function drawArtwork(canvas: HTMLCanvasElement, ranking: Ranking, executiv
   context.font = "800 16px Arial";
   context.letterSpacing = "4px";
   context.fillText("GPV ASSOCIADOS", 170, 126);
+  context.letterSpacing = "0px";
 
   context.textAlign = "center";
   context.fillStyle = "#ffc400";
   context.font = "900 20px Arial";
-  context.fillText(ranking.label.toUpperCase(), width / 2, format === "story" ? 245 : 205);
+  context.fillText(ranking.label.toUpperCase(), width / 2, format === "story" ? 245 : 190);
   context.fillStyle = "#ffffff";
-  context.font = `900 ${format === "story" ? 94 : 80}px Arial`;
-  context.fillText("TOP 3", width / 2, format === "story" ? 350 : 300);
+  context.font = `900 ${format === "story" ? 94 : 76}px Arial`;
+  context.fillText("TOP 3", width / 2, format === "story" ? 350 : 280);
   context.fillStyle = "#8d929b";
   context.font = "600 22px Arial";
-  context.fillText("DESEMPENHO EM VEÍCULOS ATIVOS", width / 2, format === "story" ? 402 : 350);
+  context.fillText("DESEMPENHO EM VEÍCULOS ATIVOS", width / 2, format === "story" ? 402 : 330);
 
   const top = ranking.entries.slice(0, 3);
   const executiveById = new Map(executives.map((executive) => [executive.id, executive]));
   const compact = format === "feed";
   const positions = compact
-    ? [{ x: 540, y: 540, r: 125 }, { x: 290, y: 800, r: 105 }, { x: 790, y: 800, r: 105 }]
-    : [{ x: 540, y: 650, r: 155 }, { x: 290, y: 1120, r: 132 }, { x: 790, y: 1120, r: 132 }];
-
-  await Promise.all(top.map(async (entry, index) => {
+    ? [{ x: 540, y: 460, r: 105, maxWidth: 610 }, { x: 275, y: 835, r: 88, maxWidth: 430 }, { x: 805, y: 835, r: 88, maxWidth: 430 }]
+    : [{ x: 540, y: 625, r: 150, maxWidth: 700 }, { x: 275, y: 1190, r: 120, maxWidth: 430 }, { x: 805, y: 1190, r: 120, maxWidth: 430 }];
+  const loaded = await Promise.all(top.map(async (entry) => {
     const executive = entry.executiveId ? executiveById.get(entry.executiveId) : undefined;
-    let photo: HTMLImageElement | null = null;
-    if (executive?.fotoDataUrl) {
-      try { photo = await loadImage(executive.fotoDataUrl); } catch {}
-    }
+    if (!executive?.fotoDataUrl) return { executive, photo: null };
+    try { return { executive, photo: await loadImage(executive.fotoDataUrl) }; }
+    catch { return { executive, photo: null }; }
+  }));
+
+  top.forEach((entry, index) => {
     const position = positions[index];
-    drawCirclePhoto(context, photo, position.x, position.y, position.r, entry.name);
+    const { executive, photo } = loaded[index];
+    const displayName = artworkName(entry, executive).toUpperCase();
+    drawCirclePhoto(context, photo, position.x, position.y, position.r, displayName, executive);
     context.fillStyle = "#ffc400";
     context.beginPath();
     context.arc(position.x + position.r * .72, position.y - position.r * .72, position.r * .28, 0, Math.PI * 2);
@@ -129,22 +164,28 @@ async function drawArtwork(canvas: HTMLCanvasElement, ranking: Ranking, executiv
     context.textBaseline = "middle";
     context.fillText(`${index + 1}º`, position.x + position.r * .72, position.y - position.r * .7);
 
-    const nameY = position.y + position.r + (compact ? 55 : 68);
+    const nameY = position.y + position.r + (compact ? 41 : 55);
     context.fillStyle = "#ffffff";
-    const name = entry.name.toUpperCase();
-    const fontSize = fitText(context, name, index === 0 ? 610 : 420, compact ? 38 : 44, 25);
+    const fontSize = fitText(context, displayName, position.maxWidth, compact ? 34 : 42, 20);
     context.font = `900 ${fontSize}px Arial`;
     context.textBaseline = "alphabetic";
-    context.fillText(name, position.x, nameY);
+    context.fillText(ellipsize(context, displayName, position.maxWidth), position.x, nameY);
     context.fillStyle = "#9da2aa";
-    context.font = `700 ${compact ? 18 : 22}px Arial`;
-    context.fillText(entry.team.toUpperCase(), position.x, nameY + (compact ? 34 : 42));
+    context.font = `700 ${compact ? 16 : 20}px Arial`;
+    context.fillText(ellipsize(context, entry.team.toUpperCase(), position.maxWidth), position.x, nameY + (compact ? 29 : 37));
     context.fillStyle = "#ffc400";
-    context.font = `900 ${compact ? 31 : 38}px Arial`;
-    context.fillText(`${entry.plates} VEÍCULOS`, position.x, nameY + (compact ? 77 : 92));
-  }));
+    context.font = `900 ${compact ? 27 : 34}px Arial`;
+    context.fillText(`${entry.plates} VEÍCULOS`, position.x, nameY + (compact ? 64 : 81));
+    context.fillStyle = "#ffffff";
+    context.font = `800 ${compact ? 17 : 21}px Arial`;
+    context.fillText(`PREV. ${formatCurrency(entry.revenue)}`, position.x, nameY + (compact ? 94 : 118));
+    context.fillStyle = "#a4a9b1";
+    context.font = `700 ${compact ? 15 : 19}px Arial`;
+    const ticket = typeof entry.averageTicket === "number" ? entry.averageTicket : (entry.plates ? entry.revenue / entry.plates : 0);
+    context.fillText(`T. MÉDIO ${formatCurrency(ticket)}`, position.x, nameY + (compact ? 120 : 150));
+  });
 
-  const footerY = height - 110;
+  const footerY = height - 82;
   context.strokeStyle = "rgba(255,255,255,.14)";
   context.beginPath(); context.moveTo(70, footerY - 36); context.lineTo(width - 70, footerY - 36); context.stroke();
   context.textAlign = "left";
@@ -173,6 +214,8 @@ export function ArtworkGenerator() {
       .finally(() => setLoading(false));
   }, []);
   const ranking = useMemo(() => rankings.find((item) => item.id === selectedId) ?? rankings[0], [rankings, selectedId]);
+  const executiveById = useMemo(() => new Map(executives.map((item) => [item.id, item])), [executives]);
+  const missingPhotos = useMemo(() => ranking?.entries.slice(0, 3).filter((entry) => !entry.executiveId || !executiveById.get(entry.executiveId)?.fotoDataUrl) ?? [], [ranking, executiveById]);
 
   useEffect(() => {
     if (!ranking || !canvasRef.current) return;
@@ -193,10 +236,11 @@ export function ArtworkGenerator() {
   if (!ranking) return <section className="panel empty-state"><ImageIcon size={36} /><h3>Nenhum ranking disponível</h3><p>Confirme um fechamento antes de gerar a arte do Top 3.</p></section>;
 
   return <div className="artwork-layout">
-    <aside className="panel artwork-controls"><span className="section-kicker">Gerador de imagem</span><h2>Arte do Top 3</h2><p>A composição usa as fotos cadastradas nos executivos e os dados congelados no fechamento.</p>
+    <aside className="panel artwork-controls"><span className="section-kicker">Gerador de imagem</span><h2>Arte do Top 3</h2><p>A composição usa nomes curtos, fotos cadastradas e os indicadores congelados no fechamento.</p>
       <label className="form-label"><span>Fechamento</span><select className="text-input" value={ranking.id} onChange={(event) => setSelectedId(event.target.value)}>{rankings.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
       <label className="form-label"><span>Formato</span><select className="text-input" value={format} onChange={(event) => setFormat(event.target.value as ArtFormat)}><option value="feed">Feed 4:5 · 1080 × 1350</option><option value="story">Story 9:16 · 1080 × 1920</option></select></label>
-      <div className="artwork-top-list">{ranking.entries.slice(0, 3).map((entry: RankingEntry) => { const executive = executives.find((item) => item.id === entry.executiveId); return <div key={entry.normalizedName}>{executive?.fotoDataUrl ? <img src={executive.fotoDataUrl} alt="" /> : <span>{getInitials(entry.name)}</span>}<div><strong>{entry.position}º · {entry.name}</strong><small>{executive?.fotoDataUrl ? "Foto cadastrada" : "Sem foto: serão usadas iniciais"}</small></div></div>; })}</div>
+      {missingPhotos.length > 0 && <div className="artwork-photo-warning"><AlertCircle size={18} /><div><strong>{missingPhotos.length === 1 ? "1 participante está sem foto" : `${missingPhotos.length} participantes estão sem foto`}</strong><span>A arte usará as iniciais. <Link href="/executivos">Cadastrar ou ajustar fotos</Link></span></div></div>}
+      <div className="artwork-top-list">{ranking.entries.slice(0, 3).map((entry: RankingEntry) => { const executive = entry.executiveId ? executiveById.get(entry.executiveId) : undefined; const displayName = artworkName(entry, executive); return <div key={entry.normalizedName}>{executive?.fotoDataUrl ? <span className="artwork-thumb"><img src={executive.fotoDataUrl} alt="" style={{ objectPosition: `${executive.fotoPosicaoX ?? 50}% ${executive.fotoPosicaoY ?? 50}%`, transform: `scale(${executive.fotoZoom ?? 1})`, transformOrigin: `${executive.fotoPosicaoX ?? 50}% ${executive.fotoPosicaoY ?? 50}%` }} /></span> : <span>{getInitials(displayName)}</span>}<div><strong>{entry.position}º · {displayName}</strong><small>{entry.plates} veículos · {formatCurrency(entry.revenue)}</small></div></div>; })}</div>
       <button className="button button--primary button--full" onClick={download} disabled={drawing}><Download size={18} /> {drawing ? "Montando arte..." : "Baixar PNG"}</button>
     </aside>
     <section className={`artwork-preview artwork-preview--${format}`}><canvas ref={canvasRef} aria-label="Prévia da arte Top 3" /></section>

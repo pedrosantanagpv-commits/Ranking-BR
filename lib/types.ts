@@ -21,10 +21,14 @@ export type Team = {
 export type Executive = {
   id: string;
   nome: string;
+  nomeArte?: string;
   nomeRelatorio: string;
   nomeNormalizado: string;
   equipeId: string | null;
   fotoDataUrl?: string;
+  fotoPosicaoX?: number;
+  fotoPosicaoY?: number;
+  fotoZoom?: number;
   ativo: boolean;
 };
 

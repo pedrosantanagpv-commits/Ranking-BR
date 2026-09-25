@@ -11,18 +11,16 @@ export async function compressProfileImage(file: File) {
       element.src = imageUrl;
     });
 
-    const size = 420;
+    const maxSize = 720;
+    const scale = Math.min(1, maxSize / Math.max(image.naturalWidth, image.naturalHeight));
     const canvas = document.createElement("canvas");
-    canvas.width = size;
-    canvas.height = size;
+    canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+    canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
     const context = canvas.getContext("2d");
     if (!context) throw new Error("Seu navegador não conseguiu processar a imagem.");
 
-    const scale = Math.max(size / image.naturalWidth, size / image.naturalHeight);
-    const width = image.naturalWidth * scale;
-    const height = image.naturalHeight * scale;
-    context.drawImage(image, (size - width) / 2, (size - height) / 2, width, height);
-    return canvas.toDataURL("image/jpeg", 0.78);
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/jpeg", 0.8);
   } finally {
     URL.revokeObjectURL(imageUrl);
   }

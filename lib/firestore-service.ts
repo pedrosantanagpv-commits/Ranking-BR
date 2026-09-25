@@ -61,10 +61,14 @@ export async function saveExecutive(executive: Omit<Executive, "id"> & { id?: st
   const reference = executive.id ? doc(database, "executivos", executive.id) : doc(collection(database, "executivos"));
   await setDoc(reference, {
     nome: executive.nome.trim(),
+    nomeArte: executive.nomeArte?.trim() ?? "",
     nomeRelatorio: executive.nomeRelatorio.trim(),
     nomeNormalizado: executive.nomeNormalizado,
     equipeId: executive.equipeId || null,
     fotoDataUrl: executive.fotoDataUrl ?? "",
+    fotoPosicaoX: executive.fotoPosicaoX ?? 50,
+    fotoPosicaoY: executive.fotoPosicaoY ?? 50,
+    fotoZoom: executive.fotoZoom ?? 1,
     ativo: executive.ativo,
     updatedAt: serverTimestamp(),
     ...(executive.id ? {} : { createdAt: serverTimestamp() }),
@@ -143,10 +147,14 @@ export async function saveClosing({
       executiveReferenceByName.set(normalizedName, executiveReference);
       batch.set(executiveReference, {
         nome: reportName,
+        nomeArte: "",
         nomeRelatorio: reportName,
         nomeNormalizado: normalizedName,
         equipeId: selectedTeamByName.get(normalizedName) ?? null,
         fotoDataUrl: "",
+        fotoPosicaoX: 50,
+        fotoPosicaoY: 50,
+        fotoZoom: 1,
         ativo: true,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -218,4 +226,47 @@ export async function saveClosing({
 
   await batch.commit();
   return rankingReference.id;
+}
+
+function recalculateMovements(rankings: Ranking[]) {
+  return rankings.map((ranking, index) => {
+    const previous = rankings[index - 1];
+    const previousExecutivePositions = new Map(previous?.entries.map((entry) => [entry.normalizedName, entry.position]) ?? []);
+    const previousTeamPositions = new Map(previous?.teamEntries?.map((entry) => [entry.teamId, entry.position]) ?? []);
+    return {
+      ...ranking,
+      entries: ranking.entries.map((entry) => ({
+        ...entry,
+        movement: previousExecutivePositions.has(entry.normalizedName)
+          ? (previousExecutivePositions.get(entry.normalizedName) as number) - entry.position
+          : 0,
+      })),
+      teamEntries: (ranking.teamEntries ?? []).map((entry) => ({
+        ...entry,
+        movement: previousTeamPositions.has(entry.teamId)
+          ? (previousTeamPositions.get(entry.teamId) as number) - entry.position
+          : 0,
+      })),
+    };
+  });
+}
+
+export async function deleteRanking(ranking: Ranking) {
+  const database = requireDb();
+  const snapshot = await getDocs(query(collection(database, "rankings"), orderBy("createdAt", "asc")));
+  const remaining = snapshot.docs
+    .filter((item) => item.id !== ranking.id)
+    .map((item) => ({ id: item.id, ...item.data() } as Ranking));
+  const recalculated = recalculateMovements(remaining);
+  const batch = writeBatch(database);
+
+  batch.delete(doc(database, "rankings", ranking.id));
+  if (ranking.importId) batch.delete(doc(database, "imports", ranking.importId));
+  recalculated.forEach((item) => {
+    batch.update(doc(database, "rankings", item.id), {
+      entries: item.entries,
+      teamEntries: item.teamEntries,
+    });
+  });
+  await batch.commit();
 }
