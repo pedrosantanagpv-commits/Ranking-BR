@@ -71,7 +71,7 @@ export function RankingsView() {
   const selected = rankings.find((ranking) => ranking.id === selectedId) ?? rankings[0];
   const availableTeams = useMemo(() => selected ? [...new Set(selected.entries.map((entry) => entry.team).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR")) : [], [selected]);
   const filteredEntries = useMemo(() => selected?.entries.filter((entry) => {
-    const matchesSearch = normalize(`${entry.name} ${entry.team} ${entry.cooperativeCodes.join(" ")}`).includes(normalize(executiveSearch));
+    const matchesSearch = normalize(`${entry.name} ${entry.team} ${(entry.cooperativeCodes ?? []).join(" ")}`).includes(normalize(executiveSearch));
     const matchesTeam = teamFilter === "ALL" || entry.team === teamFilter;
     return matchesSearch && matchesTeam;
   }) ?? [], [executiveSearch, selected, teamFilter]);

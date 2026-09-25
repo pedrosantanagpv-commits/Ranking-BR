@@ -1,5 +1,13 @@
 # Histórico de versões
 
+## v0.2.7 — Hotfix de compatibilidade após exclusão
+
+- correção da exceção que podia derrubar a tela ao excluir o ranking mais recente;
+- compatibilidade automática com fechamentos criados em versões anteriores;
+- preenchimento seguro de cooperativas, equipes, ticket médio e movimentação ausentes;
+- normalização dos rankings antigos antes da exibição e do recálculo do histórico;
+- proteção adicional das exportações Excel para registros legados.
+
 ## v0.2.6 — Comparação, auditoria e exportações
 
 - seleção livre de dois fechamentos para comparação;

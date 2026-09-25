@@ -21,6 +21,62 @@ function requireDb() {
   return db;
 }
 
+function numeric(value: unknown, fallback = 0) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function normalizeStoredRanking(id: string, data: Record<string, unknown>): Ranking {
+  const stored = { id, ...data } as Ranking;
+  const entries = Array.isArray(stored.entries) ? stored.entries.map((entry) => {
+    const plates = numeric(entry.plates);
+    const revenue = numeric(entry.revenue);
+    return {
+      ...entry,
+      name: entry.name || "Participante sem nome",
+      normalizedName: entry.normalizedName || entry.name?.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() || entry.executiveId || "sem-identificacao",
+      teamId: entry.teamId ?? null,
+      team: entry.team || "Sem equipe",
+      cooperativeCodes: Array.isArray(entry.cooperativeCodes) ? entry.cooperativeCodes : [],
+      plates,
+      revenue,
+      averageTicket: numeric(entry.averageTicket, plates > 0 ? revenue / plates : 0),
+      movement: numeric(entry.movement),
+      newAdhesions: numeric(entry.newAdhesions),
+    };
+  }) : [];
+  const teamEntries = Array.isArray(stored.teamEntries) ? stored.teamEntries.map((entry) => {
+    const plates = numeric(entry.plates);
+    const revenue = numeric(entry.revenue);
+    return {
+      ...entry,
+      teamId: entry.teamId || entry.cooperativeCode || entry.team || "sem-identificacao",
+      cooperativeCode: entry.cooperativeCode || "",
+      team: entry.team || "Equipe sem nome",
+      plates,
+      revenue,
+      averageTicket: numeric(entry.averageTicket, plates > 0 ? revenue / plates : 0),
+      members: numeric(entry.members),
+      movement: numeric(entry.movement),
+    };
+  }) : [];
+  return {
+    ...stored,
+    entries,
+    teamEntries,
+    label: stored.label || "Fechamento sem nome",
+    periodStart: stored.periodStart || "",
+    periodEnd: stored.periodEnd || "",
+    createdByName: stored.createdByName || "Não informado",
+    importId: stored.importId || "",
+    fileName: stored.fileName || "",
+    totalVehicles: numeric(stored.totalVehicles, entries.reduce((sum, entry) => sum + entry.plates, 0)),
+    totalRevenue: numeric(stored.totalRevenue, entries.reduce((sum, entry) => sum + entry.revenue, 0)),
+    totalExecutives: numeric(stored.totalExecutives, entries.length),
+    statusCounts: stored.statusCounts ?? {},
+  };
+}
+
 export async function listTeams() {
   const database = requireDb();
   const snapshot = await getDocs(query(collection(database, "equipes"), orderBy("nome")));
@@ -96,7 +152,7 @@ export async function assignTeamMembers(teamId: string, selectedIds: string[], e
 export async function listRankings(maxResults = 24) {
   const database = requireDb();
   const snapshot = await getDocs(query(collection(database, "rankings"), orderBy("createdAt", "desc"), limit(maxResults)));
-  return snapshot.docs.map((item) => ({ id: item.id, ...item.data() } as Ranking));
+  return snapshot.docs.map((item) => normalizeStoredRanking(item.id, item.data()));
 }
 
 export async function getLatestRanking() {
@@ -262,7 +318,7 @@ export async function deleteRanking(ranking: Ranking) {
   const snapshot = await getDocs(query(collection(database, "rankings"), orderBy("createdAt", "asc")));
   const remaining = snapshot.docs
     .filter((item) => item.id !== ranking.id)
-    .map((item) => ({ id: item.id, ...item.data() } as Ranking));
+    .map((item) => normalizeStoredRanking(item.id, item.data()));
   const recalculated = recalculateMovements(remaining);
   const batch = writeBatch(database);
 
