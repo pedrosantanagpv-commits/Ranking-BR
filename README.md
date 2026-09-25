@@ -1,4 +1,4 @@
-# Ranking BR — v0.2.5
+# Ranking BR — v0.2.6
 
 Versão funcional da plataforma de ranking das cooperativas BR, construída com Next.js, Vercel e Firebase.
 
@@ -30,6 +30,11 @@ Versão funcional da plataforma de ranking das cooperativas BR, construída com 
 - tema claro ou escuro com a preferência mantida no navegador;
 - histórico individual de executivos e equipes com comparação de posição, placas, previsão e ticket médio;
 - gráfico de evolução de posição entre os fechamentos;
+- comparação personalizada entre quaisquer dois fechamentos;
+- destaques automáticos de maior subida, queda e crescimento em placas ou faturamento;
+- busca de executivos, equipes e cooperativas, com filtro por equipe;
+- auditoria do fechamento com arquivos Leves e Truck, responsável, data e validações;
+- exportação do ranking completo em Excel e PDF;
 - download da arte em PNG.
 
 ## Privacidade e armazenamento
@@ -96,8 +101,9 @@ As variáveis `NEXT_PUBLIC_` da configuração Web do Firebase podem permanecer 
 4. confira a equipe identificada automaticamente pela cooperativa;
 5. confirme o fechamento;
 6. abra **Executivos** para definir o nome curto, cadastrar e enquadrar as fotos;
-7. consulte **Rankings** e use o histórico de evolução para comparar os fechamentos;
-8. abra **Gerar arte**, escolha executivos ou equipes e baixe o Top 3.
+7. consulte **Rankings**, compare dois fechamentos e confira a auditoria dos arquivos;
+8. exporte o resultado completo em Excel ou PDF quando necessário;
+9. abra **Gerar arte**, escolha executivos ou equipes e baixe o Top 3.
 
 Os participantes ainda não cadastrados são criados automaticamente na confirmação. Nos próximos relatórios, o sistema os reconhecerá pelo nome normalizado, ignorando diferenças de letras maiúsculas e acentos.
 
@@ -110,7 +116,7 @@ npm run dev
 
 Depois acesse `http://localhost:3000`.
 
-## Regras fixadas para a v0.2.5
+## Regras fixadas para a v0.2.6
 
 - entram no ranking somente linhas com situação `ATIVO`;
 - nova adesão, produção e troca de titularidade contam quando o veículo estiver ativo;

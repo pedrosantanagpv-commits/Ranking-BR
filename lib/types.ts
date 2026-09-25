@@ -124,3 +124,28 @@ export type Ranking = {
   entries: RankingEntry[];
   teamEntries: TeamRankingEntry[];
 };
+
+export type ImportAudit = {
+  id: string;
+  fileName: string;
+  fileHash: string;
+  label: string;
+  periodStart: string;
+  periodEnd: string;
+  generatedAt?: string | null;
+  generatedBy?: string | null;
+  totalRows: number;
+  activeRows: number;
+  duplicateRows: number;
+  missingPlates: number;
+  statusCounts: Record<string, number>;
+  adhesionCounts: Record<string, number>;
+  vehicleTypeCounts: Record<string, number>;
+  sourceReports: SourceReportSummary[];
+  crossSourceDuplicates: number;
+  rankingId: string;
+  rulesVersion: string;
+  createdBy: string;
+  createdByName: string;
+  createdAt?: unknown;
+};

@@ -14,7 +14,7 @@ import {
 import { db } from "./firebase";
 import { buildTeamRanking } from "./ranking";
 import { teamDocumentId } from "./team-mapping";
-import type { AppUser, Executive, ParsedReport, Ranking, RankingEntry, Team } from "./types";
+import type { AppUser, Executive, ImportAudit, ParsedReport, Ranking, RankingEntry, Team } from "./types";
 
 function requireDb() {
   if (!db) throw new Error("O Firebase não está configurado neste ambiente.");
@@ -102,6 +102,12 @@ export async function listRankings(maxResults = 24) {
 export async function getLatestRanking() {
   const rankings = await listRankings(1);
   return rankings[0];
+}
+
+export async function getImportAudit(importId: string) {
+  if (!importId) return null;
+  const snapshot = await getDoc(doc(requireDb(), "imports", importId));
+  return snapshot.exists() ? ({ id: snapshot.id, ...snapshot.data() } as ImportAudit) : null;
 }
 
 export async function saveClosing({

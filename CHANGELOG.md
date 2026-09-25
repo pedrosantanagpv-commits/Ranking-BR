@@ -1,5 +1,18 @@
 # Histórico de versões
 
+## v0.2.6 — Comparação, auditoria e exportações
+
+- seleção livre de dois fechamentos para comparação;
+- resumo das diferenças de veículos, faturamento e participantes;
+- destaques automáticos de maior subida, maior queda, crescimento em placas e crescimento financeiro;
+- alternância dos destaques entre executivos e equipes;
+- busca por executivo, equipe ou cooperativa e filtro por equipe;
+- auditoria detalhada dos arquivos SGA Leves e SGA Truck usados no fechamento;
+- identificação do responsável, data da importação, período e regra aplicada;
+- exibição de linhas analisadas, ativos, duplicidades internas e entre sistemas e placas ausentes;
+- exportação completa do ranking em Excel compatível e PDF;
+- exportações geradas no navegador, sem serviço externo ou custo adicional.
+
 ## v0.2.5 — Tema escuro, evolução e arte de equipes
 
 - switch de tema claro/escuro disponível no cabeçalho;

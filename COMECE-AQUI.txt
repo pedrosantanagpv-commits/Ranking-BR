@@ -1,4 +1,4 @@
-RANKING BR — VERSÃO 0.2.5
+RANKING BR — VERSÃO 0.2.6
 
 1. GITHUB
 Substitua os arquivos do repositório pelo conteúdo desta pasta.
@@ -9,7 +9,7 @@ As regras não mudaram desde a v0.2.0. Não é necessário publicá-las novament
 Não ative o Firebase Storage.
 
 3. APPS SCRIPT
-Atualize o Code.gs apenas se quiser que o endpoint informe a versão 0.2.5.
+Atualize o Code.gs apenas se quiser que o endpoint informe a versão 0.2.6.
 A URL /exec permanece a mesma.
 
 4. VERCEL
@@ -30,5 +30,9 @@ incorreto após confirmar a ação e então importar novamente os mesmos relató
 Use o switch de sol/lua no topo para alternar entre os temas claro e escuro.
 Em Rankings, selecione um executivo ou equipe para acompanhar a evolução.
 Em Gerar arte, escolha entre o Top 3 de executivos e o Top 3 de equipes.
+
+Em Rankings, escolha dois fechamentos para comparar, use a busca e os filtros,
+confira a auditoria dos relatórios Leves e Truck e exporte o resultado em
+Excel ou PDF.
 
 Leia o README.md para o passo a passo completo.
