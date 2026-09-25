@@ -1,5 +1,16 @@
 # Histórico de versões
 
+## v0.2.5 — Tema escuro, evolução e arte de equipes
+
+- switch de tema claro/escuro disponível no cabeçalho;
+- preferência visual salva no navegador para os próximos acessos;
+- adaptação de painéis, tabelas, formulários, modais e importação ao modo escuro;
+- gerador de arte com seleção entre Top 3 de executivos e Top 3 de equipes;
+- arte de equipes com posição, participantes, placas, previsão de faturamento e ticket médio;
+- histórico de evolução selecionável por executivo ou equipe;
+- comparação com o fechamento anterior para posição, placas, previsão e ticket médio;
+- gráfico da trajetória de posição e tabela completa por fechamento.
+
 ## v0.2.4 — Arte aprimorada e correção de fechamentos
 
 - nome curto opcional para uso exclusivo na arte, mantendo o nome completo do relatório para identificação;

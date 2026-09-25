@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AuthProvider } from "@/components/auth-provider";
+import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -9,9 +10,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `try{var t=localStorage.getItem('rankingbr_theme');document.documentElement.dataset.theme=t==='dark'?'dark':'light'}catch(e){document.documentElement.dataset.theme='light'}` }} />
+      </head>
       <body>
-        <AuthProvider>{children}</AuthProvider>
+        <ThemeProvider><AuthProvider>{children}</AuthProvider></ThemeProvider>
       </body>
     </html>
   );

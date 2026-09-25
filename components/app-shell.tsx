@@ -10,9 +10,11 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  Moon,
   Settings,
   ShieldCheck,
   Trophy,
+  Sun,
   UploadCloud,
   UserRoundCog,
   UsersRound,
@@ -20,6 +22,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "./auth-provider";
 import { Brand } from "./brand";
+import { useTheme } from "./theme-provider";
 
 const navigation = [
   { href: "/dashboard", label: "Visão geral", icon: LayoutDashboard },
@@ -43,6 +46,7 @@ const titles: Record<string, { title: string; eyebrow: string }> = {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, loading, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -110,7 +114,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <span>Firebase Authentication</span>
             </div>
           </div>
-          <span className="version">Ranking BR • v0.2.4</span>
+          <span className="version">Ranking BR • v0.2.5</span>
         </div>
       </aside>
 
@@ -128,6 +132,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
           <div className="topbar__actions">
             {user.demo && <span className="demo-pill">Modo demonstração</span>}
+            <button className="theme-switch" type="button" onClick={toggleTheme} aria-label={`Ativar tema ${theme === "light" ? "escuro" : "claro"}`} title={`Tema ${theme === "light" ? "escuro" : "claro"}`} aria-pressed={theme === "dark"}>
+              <Sun size={15} />
+              <span className="theme-switch__track"><span /></span>
+              <Moon size={15} />
+            </button>
             <div className="user-menu">
               <span className="avatar">{user.nome.slice(0, 1).toUpperCase()}</span>
               <span className="user-menu__copy">

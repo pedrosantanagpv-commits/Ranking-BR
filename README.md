@@ -1,4 +1,4 @@
-# Ranking BR — v0.2.4
+# Ranking BR — v0.2.5
 
 Versão funcional da plataforma de ranking das cooperativas BR, construída com Next.js, Vercel e Firebase.
 
@@ -24,8 +24,12 @@ Versão funcional da plataforma de ranking das cooperativas BR, construída com 
 - inclusão de todas as cooperativas BR, inclusive as ainda sem nome de equipe configurado;
 - dashboard com dados reais;
 - geração da arte Top 3 em Feed 4:5 ou Story 9:16, com previsão de faturamento e ticket médio;
+- geração de arte separada para o Top 3 de executivos ou de equipes;
 - aviso quando alguém do Top 3 ainda está sem foto;
 - exclusão confirmada de rankings incorretos por Administrador ou Desenvolvedor, liberando uma nova importação;
+- tema claro ou escuro com a preferência mantida no navegador;
+- histórico individual de executivos e equipes com comparação de posição, placas, previsão e ticket médio;
+- gráfico de evolução de posição entre os fechamentos;
 - download da arte em PNG.
 
 ## Privacidade e armazenamento
@@ -92,8 +96,8 @@ As variáveis `NEXT_PUBLIC_` da configuração Web do Firebase podem permanecer 
 4. confira a equipe identificada automaticamente pela cooperativa;
 5. confirme o fechamento;
 6. abra **Executivos** para definir o nome curto, cadastrar e enquadrar as fotos;
-7. consulte **Rankings**;
-8. abra **Gerar arte**, confira placas, previsão e ticket médio e baixe o Top 3.
+7. consulte **Rankings** e use o histórico de evolução para comparar os fechamentos;
+8. abra **Gerar arte**, escolha executivos ou equipes e baixe o Top 3.
 
 Os participantes ainda não cadastrados são criados automaticamente na confirmação. Nos próximos relatórios, o sistema os reconhecerá pelo nome normalizado, ignorando diferenças de letras maiúsculas e acentos.
 
@@ -106,7 +110,7 @@ npm run dev
 
 Depois acesse `http://localhost:3000`.
 
-## Regras fixadas para a v0.2.4
+## Regras fixadas para a v0.2.5
 
 - entram no ranking somente linhas com situação `ATIVO`;
 - nova adesão, produção e troca de titularidade contam quando o veículo estiver ativo;

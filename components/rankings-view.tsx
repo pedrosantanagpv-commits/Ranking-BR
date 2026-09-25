@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AlertCircle, ArrowDownRight, ArrowUpRight, CalendarDays, LoaderCircle, Minus, Trash2, Trophy, UploadCloud, X } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
+import { EvolutionPanel } from "@/components/evolution-panel";
 import { deleteRanking, listRankings } from "@/lib/firestore-service";
 import { formatCurrency, formatDate } from "@/lib/format";
 import type { Ranking } from "@/lib/types";
@@ -70,6 +71,8 @@ export function RankingsView() {
       <div className="ranking-summary-actions"><label><span>Selecionar fechamento</span><select value={selected.id} onChange={(event) => { setSelectedId(event.target.value); setSuccess(""); setActionError(""); }}>{rankings.map((ranking) => <option key={ranking.id} value={ranking.id}>{ranking.label}</option>)}</select></label>{user && <button className="button button--danger" type="button" onClick={() => setDeleteTarget(selected)}><Trash2 size={17} /> Excluir ranking</button>}</div>
       <div className="ranking-summary-stats"><span><strong>{selected.totalVehicles}</strong> veículos ativos</span><span><strong>{selected.totalExecutives}</strong> executivos</span><span><strong>{formatCurrency(selected.totalRevenue)}</strong> previsão</span></div>
     </section>
+
+    <EvolutionPanel rankings={rankings} />
 
     <section className="panel">
       <div className="panel__header"><div><span className="section-kicker">Classificação geral</span><h3>Ranking de executivos</h3></div><Link className="button button--secondary" href="/gerar-arte">Gerar arte do Top 3</Link></div>
